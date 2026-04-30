@@ -103,9 +103,9 @@ export function CopyConsultationButton({ form, result, reportMeta, mode = "consu
   return (
     <div className="relative rounded-[2rem] bg-white p-6 shadow-sm ring-1 ring-slate-100 md:p-7">
       <p className="text-sm font-black text-brand-600">{isSummary ? "Report Summary" : "Lead Capture"}</p>
-      <h2 className="mt-1 text-xl font-black text-slate-950">{isSummary ? "复制报告摘要" : "复制给顾问"}</h2>
+      <h2 className="mt-1 text-xl font-black text-slate-950">{isSummary ? "复制报告摘要" : "复制咨询信息，发给顾问"}</h2>
       <p className="mt-3 text-sm leading-6 text-slate-600">
-        {isSummary ? "一键复制简版报告摘要，方便保存、转发或后续做人工复核。" : "复制一段自然语言咨询文本，用户可直接粘贴发给顾问微信；其中包含顾问内部跟进信息。"}
+        {isSummary ? "一键复制简版报告摘要，方便保存、转发或后续做人工复核。" : "复制用户背景、匹配等级、预算、奖学金偏好和咨询诉求，用户可直接粘贴发给顾问微信。"}
       </p>
       <div className="mt-4 max-h-64 overflow-auto rounded-2xl bg-slate-50 p-4 text-xs leading-6 text-slate-600 ring-1 ring-slate-100">
         <pre className="whitespace-pre-wrap font-sans">{copyText}</pre>
@@ -115,7 +115,7 @@ export function CopyConsultationButton({ form, result, reportMeta, mode = "consu
         onClick={handleCopy}
         className="mt-5 w-full rounded-2xl bg-brand-600 px-5 py-4 text-sm font-black text-white shadow-lg shadow-blue-100 transition hover:-translate-y-0.5 hover:bg-brand-700"
       >
-        {copyStatus === "copied" ? "已复制" : isSummary ? "复制报告摘要" : "复制给顾问"}
+        {copyStatus === "copied" ? "已复制" : isSummary ? "复制报告摘要" : "复制咨询信息，发给顾问"}
       </button>
       {copyStatus === "failed" ? (
         <p className="mt-3 text-xs leading-5 text-rose-600">复制失败，请手动选中文本复制。</p>

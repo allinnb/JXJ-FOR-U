@@ -23,7 +23,6 @@ const requiredKeys: Array<keyof AssessmentFormData> = [
   "scholarshipPreference",
   "acceptNonPopular",
   "needConsulting",
-  "wechat",
   "email",
 ];
 
@@ -99,8 +98,9 @@ const services = [
     name: "免费简版报告",
     price: "¥0",
     tag: "当前页面",
-    desc: "快速判断匹配评级、推荐方向、3 个初筛机会和关键风险。",
-    points: ["整体匹配分", "3 个 mock 机会", "风险提示"],
+    desc: "快速判断匹配评级、推荐方向、前 3 个初筛机会和关键风险。",
+    points: ["整体匹配分", "前 3 个机会", "风险提示"],
+    button: "查看当前简版",
   },
   {
     name: "完整 AI 奖学金报告",
@@ -108,16 +108,37 @@ const services = [
     tag: "适合先自助规划",
     desc: "扩展到 10–20 个机会，并整理官网链接、截止日期、资格要求、材料清单和申请优先级。",
     points: ["10–20 个机会", "官网链接与截止日期", "材料清单与优先级"],
+    button: "获取完整报告",
     featured: true,
   },
   {
-    name: "人工复核 + 申请策略咨询",
+    name: "人工复核 + 申请策略",
     price: "¥699",
     tag: "适合正式申请前",
     desc: "顾问人工核验机会真实性，规划奖学金组合、文书重点、时间线和冲刺/稳妥策略。",
     points: ["人工官网核验", "申请组合策略", "材料与时间线建议"],
+    button: "预约人工复核",
   },
 ];
+
+function getOpportunityStats(scholarships: ReturnType<typeof searchScholarshipsWithAI>["recommendedScholarships"]) {
+  return scholarships.reduce(
+    (stats, scholarship) => {
+      if (scholarship.aiConfidence >= 85 || scholarship.difficulty === "较低") {
+        stats.high += 1;
+      } else if (scholarship.aiConfidence >= 70 || scholarship.difficulty === "中等") {
+        stats.medium += 1;
+      } else {
+        stats.low += 1;
+      }
+
+      return stats;
+    },
+    { high: 0, medium: 0, low: 0 },
+  );
+}
+
+const trustNote = "AI 初筛仅供参考，奖学金政策、截止日期和资格要求可能变化，正式申请前建议以官网和人工复核为准。";
 
 export default function ResultPage({ searchParams }: { searchParams: Record<string, string | string[] | undefined> }) {
   const form = getForm(searchParams);
@@ -141,13 +162,14 @@ export default function ResultPage({ searchParams }: { searchParams: Record<stri
 
   const result = searchScholarshipsWithAI(form);
   const reportMeta = createReportMeta(searchParams);
+  const opportunityStats = getOpportunityStats(result.recommendedScholarships);
 
   return (
     <PageShell>
       <ResultPageClientEvents reportId={reportMeta.reportId} matchLevel={result.matchLevel} overallMatchScore={result.overallMatchScore} />
       <section className="mx-auto max-w-6xl px-5 pb-14 pt-6 md:pt-10">
         <div className="mb-5 rounded-3xl bg-amber-50 px-5 py-4 text-sm font-bold leading-6 text-amber-950 ring-1 ring-amber-100">
-          AI 结果仅供参考，以官网和人工复核为准。奖学金资格、金额、截止日期和材料要求可能随年度变化。
+          {trustNote}
         </div>
 
         <div className="overflow-hidden rounded-[2.2rem] bg-slate-950 text-white shadow-soft">
@@ -163,8 +185,13 @@ export default function ResultPage({ searchParams }: { searchParams: Record<stri
               <div className="mt-6 grid gap-2 text-xs font-bold text-slate-200 sm:grid-cols-2 lg:grid-cols-4">
                 <span className="rounded-full bg-white/10 px-3 py-2">报告编号：{reportMeta.reportId}</span>
                 <span className="rounded-full bg-white/10 px-3 py-2">生成时间：{reportMeta.generatedAt}</span>
-                <span className="rounded-full bg-white/10 px-3 py-2">目标：{form.targetDegree}</span>
-                <span className="rounded-full bg-white/10 px-3 py-2">偏好：{form.scholarshipPreference}</span>
+                <span className="rounded-full bg-white/10 px-3 py-2">匹配等级：{result.matchLevel}</span>
+                <span className="rounded-full bg-white/10 px-3 py-2">匹配分数：{result.overallMatchScore}/100</span>
+              </div>
+              <div className="mt-3 grid gap-2 text-xs font-bold text-slate-200 sm:grid-cols-3">
+                <span className="rounded-2xl bg-green-500/15 px-3 py-2 text-green-100">高匹配机会：{opportunityStats.high} 个</span>
+                <span className="rounded-2xl bg-blue-500/15 px-3 py-2 text-blue-100">中匹配机会：{opportunityStats.medium} 个</span>
+                <span className="rounded-2xl bg-slate-500/20 px-3 py-2 text-slate-200">低匹配机会：{opportunityStats.low} 个</span>
               </div>
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">
                 <DownloadPdfPlaceholderButton />
@@ -217,7 +244,7 @@ export default function ResultPage({ searchParams }: { searchParams: Record<stri
               ))}
             </div>
             <div className="mt-6 rounded-3xl bg-amber-50 p-5 text-sm leading-7 text-amber-950 ring-1 ring-amber-100">
-              <strong>完整报告可继续扩展：</strong>包含 10–20 个机会、截止日期、官网链接、申请材料清单、优先级排序，并标注哪些项目值得人工重点复核。
+              <strong>免费展示前 3 个机会，完整报告包含 10–20 个机会。</strong>完整报告会补充截止日期、官网链接、申请材料清单、优先级排序，并标注哪些项目值得人工重点复核。
             </div>
             <AddWechatLink payload={{ reportId: reportMeta.reportId }} className="mt-6 inline-flex w-full justify-center rounded-2xl bg-brand-600 px-5 py-4 text-sm font-black text-white shadow-lg shadow-blue-100 transition hover:-translate-y-0.5 hover:bg-brand-700 sm:w-auto">
               添加顾问微信，获取人工复核
@@ -327,11 +354,11 @@ export default function ResultPage({ searchParams }: { searchParams: Record<stri
                   {service.points.map((point) => <li key={point}>✓ {point}</li>)}
                 </ul>
                 {service.price === "¥99" ? (
-                  <ServiceActionButton eventName="click_full_report" payload={{ reportId: reportMeta.reportId, source: "service_card" }}>获取 ¥99 完整 AI 报告</ServiceActionButton>
+                  <ServiceActionButton eventName="click_full_report" payload={{ reportId: reportMeta.reportId, source: "service_card" }}>获取完整报告</ServiceActionButton>
                 ) : service.price === "¥699" ? (
-                  <ServiceActionButton eventName="click_human_review" payload={{ reportId: reportMeta.reportId, source: "service_card" }} variant={service.featured ? "primary" : "secondary"}>预约 ¥699 人工复核咨询</ServiceActionButton>
+                  <ServiceActionButton eventName="click_human_review" payload={{ reportId: reportMeta.reportId, source: "service_card" }} variant={service.featured ? "primary" : "secondary"}>预约人工复核</ServiceActionButton>
                 ) : (
-                  <AddWechatLink payload={{ reportId: reportMeta.reportId, source: "free_card" }} className={`mt-6 block rounded-2xl px-5 py-3.5 text-center text-sm font-black ${service.featured ? "bg-white text-slate-950" : "bg-slate-950 text-white"}`}>联系顾问获取</AddWechatLink>
+                  <ServiceActionButton eventName="click_add_wechat" payload={{ reportId: reportMeta.reportId, source: "free_card" }} variant="secondary">查看当前简版</ServiceActionButton>
                 )}
               </div>
             ))}

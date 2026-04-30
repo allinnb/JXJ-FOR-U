@@ -20,3 +20,9 @@
 - 埋点架构更新：新增 `lib/analytics.ts`，`trackEvent(eventName, payload)` 第一版使用 console.log + localStorage 保存最近 100 条事件；已覆盖 visit_home、click_start_assessment、submit_assessment、view_result、click_copy_consultation、click_full_report、click_human_review、click_add_wechat。
 - AI 搜索规划更新：新增 `docs/AI_SEARCH_AGENT_PLAN.md`，规划未来动态搜索关键词生成、大学/政府/基金会官网搜索、字段抽取、来源验证、匹配评分、人工复核包和 provider 化接口。
 - 第二轮验证结论：`npm run lint` 通过，`npm run build` 通过，`npm run dev` 可运行；因 3000/3001 被占用，本次开发服务运行在 `http://localhost:3002`，并用 Node fetch 验证首页和结果页关键内容返回正常。
+- GitHub 推送状态更新：执行 `git status -sb` 显示 `main...origin/main` 无未提交变更；执行 `git push origin main` 返回 `Everything up-to-date`，说明第二轮增强已在最近提交 `0078022 Enhance scholarship matcher conversion flow.` 中并已同步到 GitHub。
+- Vercel 部署尝试：尝试打开 `https://vercel.com/new` 进行导入部署，但浏览器 MCP 报错 `Chrome debugger did not start within 10000ms`；本地也未安装 Vercel CLI（`vercel: command not found`）。下一步需要用户在 Vercel 网页端手动导入 GitHub 仓库，或安装/登录 Vercel CLI 后继续。
+- Vercel 线上部署检测：用户已完成 Vercel Deployment，线上地址为 `https://jxj-for-u-di7k.vercel.app/`。因 browser-use 仍报 `Chrome debugger did not start within 10000ms`，改用 Node fetch 检测；首页 `/`、测评页 `/assessment`、带测试参数的结果页 `/result?...` 均返回 HTTP 200，且关键内容检查通过（首页标题/CTA、表单字段、AI 免责声明、报告/匹配信息、完整报告转化区、¥99/¥699、复制给顾问）。
+- 转化率优化偏好：用户要求首页更有吸引力、表单更像测评、结果页更像正式报告，并提升添加顾问微信意愿；仍坚持不新增复杂数据库、登录、支付或后台。
+- 本轮转化率优化完成：结果页机会数量从静态值改为基于推荐卡片 `aiConfidence`/`difficulty` 推导；强化“免费展示前 3 个机会，完整报告包含 10–20 个机会”提示；服务卡按钮精确调整为“查看当前简版 / 获取完整报告 / 预约人工复核”；复制顾问按钮文案调整为“复制咨询信息，发给顾问”。
+- 本轮本地验证：`npm run lint` 通过、`npm run build` 通过、`npm run dev` 可运行在 `http://localhost:3003`；Node fetch smoke check 覆盖首页、测评页和结果页关键转化内容并通过。
