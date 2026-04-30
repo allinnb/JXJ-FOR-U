@@ -20,9 +20,38 @@ function countryMatches(scholarship: Scholarship, targetCountries: string): bool
   return scholarship.country.toLowerCase().includes(target) || target.includes(scholarship.country.toLowerCase()) || scholarship.country.includes("多国") || scholarship.country.includes("非热门");
 }
 
+function inferLeadQuality(form: AssessmentFormData, matchLevel: MatchLevel, score: number) {
+  const hasContact = form.wechat.trim().length > 0 || form.email.trim().length > 0;
+  const needsConsulting = form.needConsulting === "是";
+  const isUrgent = /2026|Fall|Spring|秋|春/i.test(form.intakeTime);
+
+  if (hasContact && needsConsulting && (matchLevel === "高" || score >= 75)) {
+    return {
+      leadQuality: "hot" as const,
+      recommendedFollowUp: "建议 24 小时内由顾问添加微信，优先做官网核验和奖学金机会池扩展。",
+      recommendedServicePackage: "¥699 人工复核 + 申请策略咨询",
+    };
+  }
+
+  if (hasContact && (needsConsulting || isUrgent || matchLevel === "中")) {
+    return {
+      leadQuality: "warm" as const,
+      recommendedFollowUp: "建议 48 小时内发送完整报告样例，引导补充成绩单、简历和目标院校清单。",
+      recommendedServicePackage: "¥99 完整 AI 奖学金报告",
+    };
+  }
+
+  return {
+    leadQuality: "cold" as const,
+    recommendedFollowUp: "建议先发送免费测评结果和奖学金科普内容，等待用户明确目标国家或入学时间后再跟进。",
+    recommendedServicePackage: "免费简版报告 + 后续内容培育",
+  };
+}
+
 export function matchScholarships(form: AssessmentFormData): MatchResult {
-  const academicScore = parseScore(form.gpa);
-  let score = 45;
+  try {
+    const academicScore = parseScore(form.gpa);
+    let score = 45;
 
   if (academicScore >= 88 || academicScore >= 3.6 * 25) score += 18;
   else if (academicScore >= 80) score += 12;
@@ -64,12 +93,31 @@ export function matchScholarships(form: AssessmentFormData): MatchResult {
     "对高匹配项目做人工复核，确认官网链接、资格条件和材料清单。",
   ];
 
-  return {
-    overallMatchScore: boundedScore,
-    matchLevel: inferMatchLevel(boundedScore),
-    recommendedCountries,
-    recommendedScholarships,
-    risks,
-    nextSteps,
-  };
+    const matchLevel = inferMatchLevel(boundedScore);
+    const leadMeta = inferLeadQuality(form, matchLevel, boundedScore);
+
+    return {
+      overallMatchScore: boundedScore,
+      matchLevel,
+      recommendedCountries,
+      recommendedScholarships,
+      risks,
+      nextSteps,
+      ...leadMeta,
+    };
+  } catch (error) {
+    console.warn("Failed to match scholarships, fallback to safe default", error);
+
+    return {
+      overallMatchScore: 50,
+      matchLevel: "中",
+      recommendedCountries: ["多国方向"],
+      recommendedScholarships: mockScholarships.slice(0, 3),
+      risks: ["系统暂时无法完整解析你的背景，建议重新测评或联系顾问人工复核。"],
+      nextSteps: ["补充目标国家、GPA、语言成绩和预算信息。", "联系顾问核验官网来源、资格要求和截止日期。"],
+      leadQuality: "warm",
+      recommendedFollowUp: "建议由顾问人工确认用户信息是否完整，再补充生成奖学金机会池。",
+      recommendedServicePackage: "¥99 完整 AI 奖学金报告",
+    };
+  }
 }
