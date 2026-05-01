@@ -8,6 +8,8 @@ import { trackEvent } from "@/src/lib/analytics";
 import { matchScholarships } from "@/src/lib/matcher";
 import type { FeishuSyncStatus, UserProfile } from "@/src/types";
 
+const STEP_LABELS = ["申请目标", "背景实力", "预算与服务"];
+
 const goalSelectFields = [
   { name: "currentEducation", label: "当前学历", options: ["高中/国际高中", "本科", "硕士", "博士", "其他"] },
   { name: "targetDegree", label: "目标学历", options: ["本科", "硕士", "博士", "交换/访学"] },
@@ -22,8 +24,8 @@ const goalInputFields = [
 const backgroundSelectFields = [{ name: "schoolBackground", label: "学校背景", options: ["985", "211", "双非", "海外院校", "国际学校", "其他"] }];
 
 const backgroundInputFields = [
-  { name: "gpa", label: "GPA 或均分", placeholder: "如：3.5/4.0 或 86/100", type: "text" },
-  { name: "languageScore", label: "语言成绩", placeholder: "如：雅思 7.0 / 托福 100", type: "text" },
+  { name: "gpa", label: "GPA 或均分", placeholder: "如：3.5/4.0 或 86/100（请注明制式）", type: "text" },
+  { name: "languageScore", label: "语言成绩", placeholder: "如：雅思 7.0 / 托福 100 / 多邻国 120", type: "text" },
 ];
 
 const serviceSelectFields = [
@@ -40,14 +42,11 @@ const serviceInputFields = [
 
 const analysisMessages = ["正在分析你的学术背景", "正在生成目标国家搜索策略", "正在匹配适合的奖学金类型", "正在评估申请难度与风险", "正在生成简版报告"];
 
-const requiredFields = [
-  ...goalSelectFields.map((field) => field.name),
-  ...goalInputFields.map((field) => field.name),
-  ...backgroundSelectFields.map((field) => field.name),
-  ...backgroundInputFields.map((field) => field.name),
-  ...serviceSelectFields.map((field) => field.name),
-  ...serviceInputFields.filter((field) => !field.optional).map((field) => field.name),
-  "experiences",
+// Fields per step for validation
+const stepRequiredFields: string[][] = [
+  [...goalSelectFields.map((f) => f.name), ...goalInputFields.map((f) => f.name)],
+  [...backgroundSelectFields.map((f) => f.name), ...backgroundInputFields.map((f) => f.name), "experiences"],
+  [...serviceSelectFields.map((f) => f.name), ...serviceInputFields.filter((f) => !f.optional).map((f) => f.name)],
 ];
 
 function isValidEmail(email: string) {
@@ -57,7 +56,10 @@ function isValidEmail(email: string) {
 function FieldInput({ field }: { field: { name: string; label: string; placeholder: string; type: string; optional?: boolean } }) {
   return (
     <label className="block">
-      <span className="text-sm font-black text-slate-800">{field.label}</span>
+      <span className="text-sm font-black text-slate-800">
+        {field.label}
+        {field.optional ? <span className="ml-1 text-xs font-normal text-slate-400">（选填）</span> : null}
+      </span>
       <input name={field.name} type={field.type} required={!field.optional} placeholder={field.placeholder} className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-blue-50" />
       {field.name === "wechat" ? <p className="mt-2 text-xs leading-5 text-slate-500">填写微信后，顾问可根据报告提供人工复核建议。不填写也可以查看简版报告。</p> : null}
     </label>
@@ -69,11 +71,32 @@ function FieldSelect({ field }: { field: { name: string; label: string; options:
     <label className="block">
       <span className="text-sm font-black text-slate-800">{field.label}</span>
       <select name={field.name} required className="mt-2 w-full rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-blue-50">
+        <option value="">请选择</option>
         {field.options.map((option) => (
           <option key={option} value={option}>{option}</option>
         ))}
       </select>
     </label>
+  );
+}
+
+function StepProgress({ currentStep }: { currentStep: number }) {
+  return (
+    <div className="mb-6">
+      <div className="flex items-center justify-between">
+        {STEP_LABELS.map((label, index) => (
+          <div key={label} className="flex flex-1 flex-col items-center gap-1.5">
+            <div className={`flex h-9 w-9 items-center justify-center rounded-full text-xs font-black transition ${index < currentStep ? "bg-brand-600 text-white" : index === currentStep ? "bg-brand-600 text-white ring-4 ring-blue-100" : "bg-slate-100 text-slate-400"}`}>
+              {index < currentStep ? "✓" : index + 1}
+            </div>
+            <span className={`text-xs font-bold ${index === currentStep ? "text-brand-700" : index < currentStep ? "text-slate-700" : "text-slate-400"}`}>{label}</span>
+          </div>
+        ))}
+      </div>
+      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-100">
+        <div className="h-full rounded-full bg-brand-600 transition-all duration-500" style={{ width: `${((currentStep + 1) / STEP_LABELS.length) * 100}%` }} />
+      </div>
+    </div>
   );
 }
 
@@ -100,11 +123,45 @@ function readProfile(formData: FormData): UserProfile {
 
 export default function AssessmentPage() {
   const router = useRouter();
+  const [currentStep, setCurrentStep] = useState(0);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisStep, setAnalysisStep] = useState(0);
   const [formError, setFormError] = useState("");
 
   const progressWidth = useMemo(() => `${((analysisStep + 1) / analysisMessages.length) * 100}%`, [analysisStep]);
+
+  function validateCurrentStep(formEl: HTMLFormElement): boolean {
+    const formData = new FormData(formEl);
+    const fields = stepRequiredFields[currentStep];
+    const missingField = fields.find((field) => !String(formData.get(field) || "").trim());
+    if (missingField) {
+      setFormError("请先补充当前步骤的所有必填信息。");
+      return false;
+    }
+    // Special email validation for step 2 (which is actually step 3 index=2)
+    if (currentStep === 2) {
+      const email = String(formData.get("email") || "").trim();
+      if (email && !isValidEmail(email)) {
+        setFormError("请填写有效的邮箱地址，方便接收报告备份。");
+        return false;
+      }
+    }
+    setFormError("");
+    return true;
+  }
+
+  function handleNext() {
+    const form = document.getElementById("assessment-form") as HTMLFormElement | null;
+    if (!form) return;
+    if (validateCurrentStep(form)) {
+      setCurrentStep((prev) => Math.min(prev + 1, 2));
+    }
+  }
+
+  function handleBack() {
+    setFormError("");
+    setCurrentStep((prev) => Math.max(prev - 1, 0));
+  }
 
   async function syncLead(userProfile: UserProfile, matchResult: ReturnType<typeof matchScholarships>) {
     try {
@@ -132,16 +189,18 @@ export default function AssessmentPage() {
     try {
       const formData = new FormData(event.currentTarget);
       const profile = readProfile(formData);
-      const values = Object.fromEntries(formData.entries());
 
-      const missingField = requiredFields.find((field) => !String(values[field] || "").trim());
-      if (missingField) {
-        setFormError("请先补充所有必填信息，再生成奖学金匹配报告。");
+      // Full validation
+      if (!isValidEmail(profile.email)) {
+        setFormError("请填写有效的邮箱地址，方便接收报告备份。");
         return;
       }
 
-      if (!isValidEmail(profile.email)) {
-        setFormError("请填写有效的邮箱地址，方便接收报告备份。");
+      const allRequired = [...stepRequiredFields[0], ...stepRequiredFields[1], ...stepRequiredFields[2]];
+      const values = Object.fromEntries(formData.entries());
+      const missingField = allRequired.find((field) => !String(values[field] || "").trim());
+      if (missingField) {
+        setFormError("请先补充所有必填信息，再生成奖学金匹配报告。");
         return;
       }
 
@@ -203,8 +262,11 @@ export default function AssessmentPage() {
               <p className="mt-3 text-sm leading-6 text-slate-600">提交后你会立即看到简版报告；顾问可在飞书工作台查看资料、复核机会并记录跟进状态。</p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5 rounded-[2.2rem] bg-white p-5 shadow-soft ring-1 ring-slate-100 md:p-8">
-              <section className="rounded-[1.7rem] bg-slate-50 p-4 ring-1 ring-slate-100 md:p-5">
+            <form id="assessment-form" onSubmit={handleSubmit} className="space-y-5 rounded-[2.2rem] bg-white p-5 shadow-soft ring-1 ring-slate-100 md:p-8">
+              <StepProgress currentStep={currentStep} />
+
+              {/* Step 1: 申请目标 */}
+              <section className={`rounded-[1.7rem] bg-slate-50 p-4 ring-1 ring-slate-100 md:p-5 ${currentStep !== 0 ? "hidden" : ""}`}>
                 <p className="text-sm font-black text-brand-600">Step 1：申请目标</p>
                 <p className="mt-1 text-xs leading-5 text-slate-500">告诉我们你想去哪里、读什么阶段和专业，用于生成目标国家搜索策略。</p>
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -213,7 +275,8 @@ export default function AssessmentPage() {
                 </div>
               </section>
 
-              <section className="rounded-[1.7rem] bg-slate-50 p-4 ring-1 ring-slate-100 md:p-5">
+              {/* Step 2: 背景实力 */}
+              <section className={`rounded-[1.7rem] bg-slate-50 p-4 ring-1 ring-slate-100 md:p-5 ${currentStep !== 1 ? "hidden" : ""}`}>
                 <p className="text-sm font-black text-brand-600">Step 2：背景实力</p>
                 <p className="mt-1 text-xs leading-5 text-slate-500">GPA、语言和经历会影响奖学金竞争力，也决定哪些项目值得人工重点复核。</p>
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -222,11 +285,12 @@ export default function AssessmentPage() {
                 </div>
                 <label className="mt-4 block">
                   <span className="text-sm font-black text-slate-800">科研/论文/竞赛/实习经历</span>
-                  <textarea name="experiences" required rows={5} placeholder="请简要描述你的科研、论文、竞赛、实习、项目或公益经历" className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-blue-50" />
+                  <textarea name="experiences" required rows={5} placeholder="如：一篇 SCI 论文（二作）、一段券商实习、校级数学竞赛一等奖、学生会主席经历等" className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-blue-50" />
                 </label>
               </section>
 
-              <section className="rounded-[1.7rem] bg-slate-50 p-4 ring-1 ring-slate-100 md:p-5">
+              {/* Step 3: 预算与服务 */}
+              <section className={`rounded-[1.7rem] bg-slate-50 p-4 ring-1 ring-slate-100 md:p-5 ${currentStep !== 2 ? "hidden" : ""}`}>
                 <p className="text-sm font-black text-brand-600">Step 3：预算与服务需求</p>
                 <p className="mt-1 text-xs leading-5 text-slate-500">预算和服务偏好会帮助判断是先看完整 AI 报告，还是直接做人工复核策略。</p>
                 <div className="mt-4 grid gap-4 sm:grid-cols-2">
@@ -237,9 +301,22 @@ export default function AssessmentPage() {
 
               {formError ? <p className="rounded-2xl bg-rose-50 px-4 py-3 text-sm font-bold text-rose-700 ring-1 ring-rose-100">{formError}</p> : null}
 
-              <button type="submit" className="w-full rounded-2xl bg-brand-600 px-6 py-4 text-sm font-black text-white shadow-lg shadow-blue-100 transition hover:-translate-y-0.5 hover:bg-brand-700">
-                生成奖学金匹配报告
-              </button>
+              <div className="flex gap-3">
+                {currentStep > 0 ? (
+                  <button type="button" onClick={handleBack} className="flex-1 rounded-2xl border border-slate-200 bg-white px-6 py-4 text-sm font-black text-slate-800 transition hover:border-brand-200 hover:text-brand-700">
+                    上一步
+                  </button>
+                ) : null}
+                {currentStep < 2 ? (
+                  <button type="button" onClick={handleNext} className="flex-1 rounded-2xl bg-brand-600 px-6 py-4 text-sm font-black text-white shadow-lg shadow-blue-100 transition hover:-translate-y-0.5 hover:bg-brand-700">
+                    下一步
+                  </button>
+                ) : (
+                  <button type="submit" className="flex-1 rounded-2xl bg-brand-600 px-6 py-4 text-sm font-black text-white shadow-lg shadow-blue-100 transition hover:-translate-y-0.5 hover:bg-brand-700">
+                    生成奖学金匹配报告
+                  </button>
+                )}
+              </div>
               <p className="text-center text-xs leading-5 text-slate-400">{TRUST_DISCLAIMER}</p>
             </form>
           </>

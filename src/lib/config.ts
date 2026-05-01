@@ -16,3 +16,5 @@ export const STORAGE_KEYS = {
   feishuSyncStatus: "scholarshipFeishuSyncStatus",
   legacyLead: "scholarshipAssessmentLead",
 } as const;
+
+export const DATA_VERSION = "v2";

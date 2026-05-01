@@ -15,9 +15,14 @@ export function PageShell({ children }: { children: ReactNode }) {
               <span className="block text-[11px] font-semibold text-slate-500">Scholarship Matching Report</span>
             </span>
           </Link>
-          <Link href="/assessment" className="rounded-full bg-slate-950 px-4 py-2.5 text-xs font-black text-white shadow-lg shadow-slate-200 transition hover:-translate-y-0.5 hover:bg-brand-700">
-            免费测评
-          </Link>
+          <nav className="flex items-center gap-3">
+            <Link href="/scholarships" className="hidden text-xs font-bold text-slate-500 transition hover:text-brand-700 sm:block">
+              奖学金库
+            </Link>
+            <Link href="/assessment" className="rounded-full bg-slate-950 px-4 py-2.5 text-xs font-black text-white shadow-lg shadow-slate-200 transition hover:-translate-y-0.5 hover:bg-brand-700">
+              免费测评
+            </Link>
+          </nav>
         </div>
       </header>
       {children}

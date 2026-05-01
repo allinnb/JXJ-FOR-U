@@ -20,6 +20,27 @@ function canUseLocalStorage() {
   return typeof window !== "undefined" && typeof window.localStorage !== "undefined";
 }
 
+// Batch-send analytics events to server endpoint
+let pendingEvents: AnalyticsEvent[] = [];
+let flushTimer: ReturnType<typeof setTimeout> | null = null;
+
+function flushEvents() {
+  if (pendingEvents.length === 0) return;
+  const toSend = [...pendingEvents];
+  pendingEvents = [];
+
+  try {
+    void fetch("/api/analytics", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ events: toSend }),
+      keepalive: true,
+    });
+  } catch {
+    // Silently fail — don't break user flow
+  }
+}
+
 export function trackEvent(eventName: AnalyticsEventName, payload: Record<string, unknown> = {}) {
   const event: AnalyticsEvent = {
     eventName,
@@ -28,6 +49,15 @@ export function trackEvent(eventName: AnalyticsEventName, payload: Record<string
   };
 
   console.log("[analytics]", event);
+
+  // Queue for server delivery
+  pendingEvents.push(event);
+  if (!flushTimer) {
+    flushTimer = setTimeout(() => {
+      flushTimer = null;
+      flushEvents();
+    }, 3000);
+  }
 
   if (!canUseLocalStorage()) return;
 

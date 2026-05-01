@@ -39,6 +39,15 @@ function normalizeText(value: unknown, fallback = "待确认") {
 }
 
 export async function POST(request: Request) {
+  // Admin API key authentication
+  const adminKey = process.env.ADMIN_API_KEY;
+  if (adminKey) {
+    const providedKey = request.headers.get("x-admin-key") || "";
+    if (providedKey !== adminKey) {
+      return NextResponse.json({ success: false, error: "无效的管理员密钥。" }, { status: 401 });
+    }
+  }
+
   const runId = createRunId();
   const createdAt = new Date().toISOString();
   const models = getOpenRouterModels();
