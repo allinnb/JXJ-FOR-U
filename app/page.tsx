@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 import { AddWechatLink } from "@/components/AddWechatLink";
 import { AnalyticsLink } from "@/components/AnalyticsLink";
 import { CTASection } from "@/components/CTASection";
@@ -40,21 +42,21 @@ export default function HomePage() {
   return (
     <PageShell>
       <HomeVisitTracker />
-      <section className="mx-auto max-w-6xl px-5 pb-14 pt-6 md:pt-10">
+      <section className="mx-auto max-w-6xl px-4 pb-14 pt-5 sm:px-5 md:pt-8">
         {/* Hero */}
-        <div className="grid gap-6 lg:grid-cols-[1.04fr_0.96fr] lg:items-stretch">
-          <div className="rounded-[2.2rem] bg-white/95 p-6 shadow-soft ring-1 ring-slate-100 md:p-12">
+        <div className="grid gap-5 lg:grid-cols-[1.08fr_0.92fr] lg:items-start">
+          <div className="rounded-[1.8rem] bg-white/95 p-5 shadow-soft ring-1 ring-slate-100 sm:p-7 md:p-9">
             <span className="inline-flex rounded-full bg-blue-50 px-3 py-1 text-xs font-black text-brand-700 ring-1 ring-blue-100">
               30 秒自测 · 官网核验 · 顾问复核
             </span>
-            <h1 className="mt-5 text-4xl font-black leading-[1.08] tracking-tight text-slate-950 md:text-6xl">
+            <h1 className="mt-4 max-w-3xl text-[2.35rem] font-black leading-[1.08] tracking-tight text-slate-950 sm:text-5xl md:text-[3.35rem]">
               测一测你的背景，适合申请哪些海外奖学金？
             </h1>
-            <p className="mt-5 max-w-2xl text-base leading-7 text-slate-600 md:text-lg">
+            <p className="mt-4 max-w-2xl text-base leading-7 text-slate-600 md:text-lg">
               输入 GPA、目标国家、专业和预算，AI 为你初筛可申请的奖学金方向，并由顾问提供官网核验与申请策略建议。
             </p>
 
-            <div className="mt-6 grid gap-2 rounded-3xl bg-slate-50 p-3 ring-1 ring-slate-100 sm:grid-cols-3">
+            <div className="mt-5 grid gap-2 rounded-3xl bg-slate-50 p-3 ring-1 ring-slate-100 sm:grid-cols-3">
               {[
                 ["仅需 30 秒", "先填 4 个关键信息"],
                 ["免费出简版", "立即看到前 3 个机会"],
@@ -67,7 +69,7 @@ export default function HomePage() {
               ))}
             </div>
 
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <AnalyticsLink href="/assessment" eventName="click_start_assessment" className="rounded-2xl bg-brand-600 px-7 py-4 text-center text-base font-black text-white shadow-xl shadow-blue-200 transition hover:-translate-y-0.5 hover:bg-brand-700">
                 立即生成我的奖学金报告
               </AnalyticsLink>
@@ -104,16 +106,16 @@ export default function HomePage() {
             <p className="mt-4 rounded-2xl bg-amber-50 px-4 py-3 text-xs font-bold leading-5 text-amber-900 ring-1 ring-amber-100">{TRUST_DISCLAIMER}</p>
           </div>
 
-          <aside id="sample-report" className="rounded-[2.2rem] bg-slate-950 p-5 text-white shadow-soft md:p-8">
+          <aside id="sample-report" className="rounded-[1.8rem] bg-slate-950 p-5 text-white shadow-soft md:p-6">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-sm font-bold text-blue-200">专业报告样例预览</p>
-                <h2 className="mt-2 text-2xl font-black">填表前先看报告是否有用</h2>
+                <h2 className="mt-2 text-xl font-black md:text-2xl">填表前先看报告是否有用</h2>
               </div>
               <span className="rounded-full bg-white px-3 py-1 text-xs font-black text-slate-950">Demo</span>
             </div>
 
-            <div className="mt-5 rounded-[1.7rem] bg-white p-4 text-slate-950 shadow-2xl">
+            <div className="mt-4 rounded-[1.5rem] bg-white p-4 text-slate-950 shadow-2xl">
               <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
                 <div>
                   <p className="text-xs font-black text-brand-600">SCH-2026-SAMPLE</p>
@@ -125,7 +127,7 @@ export default function HomePage() {
                 {reportPreviewFields.map((field) => (
                   <div key={field} className="rounded-2xl bg-slate-50 px-3 py-2 ring-1 ring-slate-100">
                     <p className="text-[11px] font-black text-slate-500">{field}</p>
-                    <div className="mt-2 h-2 rounded-full bg-slate-200" />
+                    <div className="mt-2 h-1.5 rounded-full bg-slate-200" />
                   </div>
                 ))}
               </div>
@@ -135,11 +137,11 @@ export default function HomePage() {
               </div>
             </div>
 
-            <div className="mt-5 grid gap-3">
+            <div className="mt-4 grid gap-2">
               {sampleReport.map((item) => (
-                <div key={item.label} className={`rounded-3xl p-4 ring-1 ${item.tone}`}>
+                <div key={item.label} className={`rounded-2xl p-3 ring-1 ${item.tone}`}>
                   <p className="text-xs font-black">{item.label}</p>
-                  <p className="mt-1 text-sm font-bold leading-6">{item.value}</p>
+                  <p className="mt-1 text-sm font-bold leading-5">{item.value}</p>
                 </div>
               ))}
             </div>
@@ -150,22 +152,28 @@ export default function HomePage() {
         </div>
 
         {/* WeChat conversion */}
-        <section className="mt-8 grid gap-4 rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-100 md:grid-cols-[1fr_auto] md:items-center md:p-7">
+        <section className="mt-8 grid gap-5 rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-100 md:grid-cols-[1fr_19rem] md:items-center md:p-7">
           <div>
             <p className="text-sm font-black text-brand-600">顾问人工复核入口</p>
             <h2 className="mt-1 text-2xl font-black text-slate-950">测评后可直接把咨询信息发给顾问</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-600">移动端点击复制微信号即可添加；电脑端可复制后在微信搜索。后续如果你提供真实二维码，我可以替换为可长按识别图片。</p>
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">移动端可点击复制微信号，也可以长按识别二维码添加顾问；电脑端可扫码或复制微信号搜索添加。</p>
           </div>
-          <div className="flex items-center gap-4 rounded-3xl bg-slate-50 p-4 ring-1 ring-slate-100">
-            <div className="grid h-24 w-24 grid-cols-5 gap-1 rounded-2xl bg-white p-2 ring-1 ring-slate-200" aria-label="微信二维码视觉占位">
-              {Array.from({ length: 25 }).map((_, index) => (
-                <span key={index} className={`rounded-sm ${[0, 1, 2, 5, 10, 6, 18, 19, 23, 24, 14, 21, 8].includes(index) ? "bg-slate-950" : "bg-slate-100"}`} />
-              ))}
+          <div className="w-full rounded-3xl bg-slate-50 p-4 ring-1 ring-slate-100 sm:flex sm:items-center sm:gap-4 md:justify-self-end">
+            <div className="mx-auto flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white p-1.5 shadow-sm ring-1 ring-slate-200 sm:mx-0">
+              <Image
+                src="/consultant-wechat.jpg"
+                alt={`顾问微信 ${CONSULTANT_WECHAT} 二维码`}
+                width={128}
+                height={128}
+                className="h-full w-full rounded-xl object-cover"
+                priority
+              />
             </div>
-            <div>
+            <div className="mt-4 text-center sm:mt-0 sm:text-left">
               <p className="text-xs font-bold text-slate-500">顾问微信</p>
               <p className="mt-1 text-lg font-black text-slate-950">{CONSULTANT_WECHAT}</p>
-              <AddWechatLink payload={{ source: "home_wechat_card" }} className="mt-3 rounded-xl bg-brand-600 px-4 py-2 text-xs font-black text-white">
+              <p className="mt-1 text-xs font-semibold text-slate-500">长按二维码识别 / 扫码添加</p>
+              <AddWechatLink payload={{ source: "home_wechat_card" }} className="mt-3 inline-flex rounded-xl bg-brand-600 px-4 py-2 text-xs font-black text-white">
                 点击复制微信号
               </AddWechatLink>
             </div>
