@@ -26,3 +26,4 @@
 - SEO 优化：`app/layout.tsx` title 改为“AI 奖学金匹配 - 30秒自测你的海外留学奖学金申请背景”，description 增加全奖/半奖、211/985、双非等关键词，并同步 keywords 与 OG 文案。
 - 验证与发布：`npm run lint`、`npm run build` 均通过；提交 `7684608 Optimize landing page conversion messaging.` 已推送到 GitHub main。
 - 用户提供私人微信二维码图片，已复制到 `public/consultant-wechat.jpg` 并替换首页“顾问人工复核入口”的二维码视觉占位；首页现在展示真实二维码，保留“点击复制微信号”和“长按二维码识别 / 扫码添加”提示。
+- 二维码上线注意：曾因 `public/consultant-wechat.jpg` 未提交导致 Vercel `/consultant-wechat.jpg` 404，已在提交 `64eeb47` 修复并同步调整首页 Hero 布局比例。后续若用户反馈二维码不对，优先检查该静态资源是否已部署、Vercel 是否完成新 commit 部署。
