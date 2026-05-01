@@ -7,8 +7,15 @@
 }
 
 body {
-  background: #f8fafc;
+  background: #f6f8fb;
   color: #0f172a;
+}
+
+.soft-grid {
+  background-image:
+    linear-gradient(rgba(15, 23, 42, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(15, 23, 42, 0.035) 1px, transparent 1px);
+  background-size: 28px 28px;
 }
 
 html {

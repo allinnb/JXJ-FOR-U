@@ -27,3 +27,6 @@
 - 验证与发布：`npm run lint`、`npm run build` 均通过；提交 `7684608 Optimize landing page conversion messaging.` 已推送到 GitHub main。
 - 用户提供私人微信二维码图片，已复制到 `public/consultant-wechat.jpg` 并替换首页“顾问人工复核入口”的二维码视觉占位；首页现在展示真实二维码，保留“点击复制微信号”和“长按二维码识别 / 扫码添加”提示。
 - 二维码上线注意：曾因 `public/consultant-wechat.jpg` 未提交导致 Vercel `/consultant-wechat.jpg` 404，已在提交 `64eeb47` 修复并同步调整首页 Hero 布局比例。后续若用户反馈二维码不对，优先检查该静态资源是否已部署、Vercel 是否完成新 commit 部署。
+- A+B+D 首页转化优化已完成：首屏新增“先填 4 个关键信息就能开始”低门槛卡片和“立即开始 30 秒自测”按钮；新增“简版报告长什么样？”预览钩子区块，展示 A级 86/100、三个示例奖学金机会和“顾问核验后解锁”的完整报告价值；移动端二维码放大到 176px 并补充手机/电脑添加指引；底部 CTA 文案改为“获取我的专属奖学金/升学/签证方案”。验证 `npm run lint`、`npm run build` 通过；提交 `3998a1b Improve landing page action hooks.` 已推送 GitHub main。
+- UI 系统重构已完成：不改飞书/AI/API 后端闭环，仅重做首页、测评页、结果页与通用 CTA 的视觉层级；全局背景改为克制浅灰蓝，首页 Hero 精简为左侧核心文案 + 右侧单一报告样例，二维码下移为独立顾问复核区，测评页减少嵌套灰底，结果页改成更正式的报告封面和分层奖学金卡片。验证 `npm run lint`、`npm run build` 均通过。
+- 用户对网页首屏 PDF 截图反馈“比例不符合黄金比例审美”。已根据截图继续优化首页 Hero：桌面左右栏由接近五五开改为约黄金比例主次关系（左侧约 62%，右侧约 38%），右侧样例报告卡限制最大宽度并降低字段密度，左侧主文案区加宽、增强标题呼吸感。验证 `npm run lint`、`npm run build` 均通过。
