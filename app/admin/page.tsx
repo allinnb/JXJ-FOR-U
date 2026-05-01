@@ -14,7 +14,7 @@ export default function AdminPage() {
   // AI Review state
   const [reportId, setReportId] = useState("");
   const [reviewLoading, setReviewLoading] = useState(false);
-  const [reviewResult, setReviewResult] = useState<{ success: boolean; candidates?: unknown[]; error?: string } | null>(null);
+  const [reviewResult, setReviewResult] = useState<{ success: boolean; candidates?: unknown[]; error?: string; feishuWriteSuccess?: boolean } | null>(null);
 
   function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -43,7 +43,7 @@ export default function AdminPage() {
         },
         body: JSON.stringify({ reportId, userProfile }),
       });
-      const data = (await res.json()) as { success: boolean; candidates?: unknown[]; error?: string };
+      const data = (await res.json()) as { success: boolean; candidates?: unknown[]; error?: string; feishuWriteSuccess?: boolean };
       setReviewResult(data);
     } catch (err) {
       setReviewResult({ success: false, error: err instanceof Error ? err.message : "请求失败" });
@@ -127,6 +127,19 @@ export default function AdminPage() {
                 <>
                   <p className="font-black">AI 复核完成</p>
                   <p className="mt-1">找到 {Array.isArray(reviewResult.candidates) ? reviewResult.candidates.length : 0} 个候选奖学金机会。</p>
+                  {reviewResult.feishuWriteSuccess ? (
+                    <p className="mt-1 text-green-700">✅ AI 复核结果已自动写入飞书 Scholarships 表。</p>
+                  ) : (
+                    <p className="mt-1 text-amber-700">⚠️ AI 复核结果已生成，但写入飞书失败，请检查飞书配置。</p>
+                  )}
+                  <a
+                    href="https://feishu.cn/base/HFD5bJChOaVYl8sWDegcaWMZnIA?table=tblt8OVCvgm2gKXt"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="mt-2 inline-block text-xs text-brand-700 underline"
+                  >
+                    前往飞书 Scholarships 表查看 →
+                  </a>
                 </>
               ) : (
                 <>
@@ -145,7 +158,7 @@ export default function AdminPage() {
             <li>1. 在飞书 Leads 表中查看新提交的用户信息和匹配等级。</li>
             <li>2. 根据线索等级（hot/warm/cold）判断跟进优先级。</li>
             <li>3. 对需要 AI 深度搜索的报告，输入报告编号触发 AI 复核。</li>
-            <li>4. AI 复核结果会写入飞书 AI Runs 表，候选奖学金可回写 Scholarships 表。</li>
+            <li>4. AI 复核结果会自动写入飞书 Scholarships 表和 AI Runs 表。</li>
             <li>5. 在 Scholarships 表中修改「顾问判断」「顾问优先级」「顾问备注」。</li>
             <li>6. 联系用户时，参考系统推荐的服务套餐和跟进方式。</li>
           </ul>

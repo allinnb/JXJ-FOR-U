@@ -42,3 +42,15 @@
 - 飞书新 Base 链接：Leads 表 `https://feishu.cn/base/HFD5bJChOaVYl8sWDegcaWMZnIA?table=tblBRlgBEVL5v1xq`；Scholarships 表 `https://feishu.cn/base/HFD5bJChOaVYl8sWDegcaWMZnIA?table=tblt8OVCvgm2gKXt`；AI Runs 表 `https://feishu.cn/base/HFD5bJChOaVYl8sWDegcaWMZnIA?table=tblZFPveSOBPmS6d`。
 - OpenRouter/Exa 安全提醒：用户曾在聊天中明文提供 OpenRouter API Key 和 Exa API Key；后续应建议用户在 OpenRouter/Exa 后台重置或轮换，并只放入 `.env.local` / Vercel 环境变量，不提交 GitHub。
 - AI 复核联调结论：Exa Search/Contents 已真实跑通；OpenRouter API Key 可用。`google/gemma-4-31b-it:free` 曾返回 upstream 429 限流，本地临时用 `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free` 同时作为 fast/strong 模型跑通 `/api/admin/run-ai-review`。已增强 query fallback、单页抽取/评分容错、Exa fallback candidates、字段规范化和成本控制。
+- 线上部署准备：已将内部顾问版与 AI 手动复核代码提交为 `ef95fd1 Add internal advisor AI review workflow.` 并推送到 GitHub `allinnb/JXJ-FOR-U` 的 `main` 分支；推送前 `npm run lint` 与 `npm run build` 均通过。
+- Vercel 部署限制：当前环境没有 Vercel CLI（`vercel: command not found`），浏览器工具打开 Vercel Dashboard 失败（Chrome debugger 未启动），因此未能代用户直接写入 Vercel 环境变量；需要用户在 Vercel 项目 Settings → Environment Variables 手动配置 OpenRouter/Exa/飞书变量并 Redeploy。
+- 线上 `https://jxj-for-u-em47.vercel.app/` 已检测：首页和测评页均为新版；`POST /api/admin/run-ai-review` 返回 `success:true` 并可生成 Exa/AI 候选奖学金，说明 OpenRouter/Exa 线上接口基本可执行；但 `POST /api/leads` 返回缺少 `FEISHU_BITABLE_APP_TOKEN`，说明该 Vercel Deployment 未配置或未生效飞书环境变量，飞书同步闭环尚未打通。
+- 线上 `https://jxj-for-u-em47.vercel.app/` 重新检测：`POST /api/leads` 已返回 `{success:true, reportId:"SCH-2026-ONTEST"}`，说明 Vercel 飞书同步环境变量已生效，Leads/Scholarships 写入闭环跑通；`POST /api/admin/run-ai-review` 已返回 `{success:true}`、runId 与候选奖学金，说明线上 OpenRouter/Exa AI 复核可执行。仍建议用户轮换已在聊天中暴露的飞书/OpenRouter/Exa 密钥。
+
+
+## 2026-05-01 自动提取
+- 新版网站 https://jxj-for-u-cqkk.vercel.app/ 部署成功，所有主要优化已上线。
+- 线上全链路跑通确认：`https://jxj-for-u-xjkc.vercel.app/` 已通过完整测试——飞书 Leads/Scholarships 同步成功、AI 复核返回真实候选（Durham University Business Analytics Scholarships 等）、OpenRouter 和 Exa 线上均可用。
+- 结果页同步状态 bug 修复：表单提交后 localStorage 初始状态为 `success:false` 导致误判失败，已改为三态（pending/success/failed）+ 轮询机制。
+- 当前系统完整能力：用户测评→简版报告→飞书同步→顾问在飞书查看→顾问通过 /admin 触发 AI 复核→返回真实候选奖学金。AI 复核结果暂未自动合并为用户可见完整报告，也未自动写入 Scholarships 表。
+- Admin 密码 `jxj2026` 硬编码在客户端组件中，`ADMIN_API_KEY` 环境变量未设置时不校验 header key。

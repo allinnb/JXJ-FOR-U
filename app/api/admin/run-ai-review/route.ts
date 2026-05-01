@@ -6,6 +6,7 @@ import { getOpenRouterModels } from "@/src/lib/ai/openrouter";
 import { scoreScholarshipMatch } from "@/src/lib/ai/scoreScholarshipMatch";
 import { searchScholarshipWeb } from "@/src/lib/ai/searchScholarshipWeb";
 import { createAIRunRecord } from "@/src/lib/feishu/aiRuns";
+import { createScholarshipRecords } from "@/src/lib/feishu/scholarships";
 import type { AIRunRecord, Scholarship, UserProfile } from "@/src/types";
 
 function createRunId() {
@@ -157,7 +158,18 @@ export async function POST(request: Request) {
       errorMessage: "",
     });
 
-    return NextResponse.json({ success: true, runId, reportId, queries, candidates });
+    // 将 AI 复核结果写入飞书 Scholarships 表
+    let feishuWriteSuccess = false;
+    if (candidates.length > 0) {
+      try {
+        await createScholarshipRecords(reportId, candidates);
+        feishuWriteSuccess = true;
+      } catch (writeErr) {
+        console.error("[api/admin/run-ai-review] AI 复核结果写入飞书 Scholarships 表失败:", writeErr);
+      }
+    }
+
+    return NextResponse.json({ success: true, runId, reportId, queries, candidates, feishuWriteSuccess });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "AI 复核运行失败";
     console.error("[api/admin/run-ai-review] failed", error);
