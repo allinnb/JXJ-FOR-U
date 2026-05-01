@@ -2,16 +2,18 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "AI 留学奖学金匹配助手 | 测一测你的背景适合申请哪些奖学金",
+  title: "AI 奖学金匹配 - 30秒自测你的海外留学奖学金申请背景",
   description:
-    "输入 GPA、目标国家、专业和预算，AI 为你初筛可申请的海外奖学金方向，并由顾问提供官网核验与申请策略建议。",
+    "AI 留学奖学金匹配助手，30 秒输入 GPA、目标国家、专业和预算，初筛海外全奖、半奖、学费减免机会，涵盖 211/985 及双非背景，并由顾问提供官网核验与申请策略建议。",
+  keywords: ["留学奖学金", "AI奖学金匹配", "海外奖学金", "全奖", "半奖", "211", "985", "双非", "留学申请"],
   icons: { icon: "/favicon.svg" },
   openGraph: {
-    title: "AI 留学奖学金匹配助手",
+    title: "AI 奖学金匹配 - 30秒自测你的海外留学奖学金申请背景",
     description:
-      "2 分钟生成你的海外奖学金机会初筛报告。覆盖英国、欧洲、澳洲、北美等方向。",
+      "输入 GPA、目标国家、专业和预算，初筛海外全奖/半奖机会，并由顾问提供官网核验与申请策略建议。",
     type: "website",
     locale: "zh_CN",
+    siteName: "AI 留学奖学金匹配助手",
   },
 };
 

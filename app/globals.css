@@ -14,3 +14,22 @@ body {
 html {
   scroll-behavior: smooth;
 }
+
+@keyframes social-marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.social-marquee-track {
+  animation: social-marquee 24s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .social-marquee-track {
+    animation: none;
+  }
+}
