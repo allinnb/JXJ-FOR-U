@@ -1,84 +1,39 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { trackEvent } from "@/lib/analytics";
-import type { AssessmentFormData, MatchResult, ReportMeta } from "@/types";
+import { useMemo, useState } from "react";
+import { CONSULTANT_WECHAT } from "@/src/lib/config";
+import { trackEvent } from "@/src/lib/analytics";
+import { generateAdvisorInternalText, generateConsultationText } from "@/src/lib/consultationText";
+import { matchLevelLabels } from "@/src/types";
+import type { MatchResult, UserProfile } from "@/src/types";
 
 interface CopyConsultationButtonProps {
-  form: AssessmentFormData;
-  result: MatchResult;
-  reportMeta: ReportMeta;
+  userProfile: UserProfile;
+  matchResult: MatchResult;
   mode?: "consultation" | "summary";
 }
 
-const STORAGE_KEY = "scholarshipAssessmentLead";
-
-function normalizeStoredLead(value: unknown): Partial<AssessmentFormData> {
-  if (!value || typeof value !== "object") {
-    return {};
-  }
-
-  return value as Partial<AssessmentFormData>;
-}
-
-export function CopyConsultationButton({ form, result, reportMeta, mode = "consultation" }: CopyConsultationButtonProps) {
-  const [storedLead, setStoredLead] = useState<Partial<AssessmentFormData>>({});
+export function CopyConsultationButton({ userProfile, matchResult, mode = "consultation" }: CopyConsultationButtonProps) {
   const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "failed">("idle");
 
-  useEffect(() => {
-    try {
-      const rawLead = localStorage.getItem(STORAGE_KEY);
-      if (!rawLead) return;
-      setStoredLead(normalizeStoredLead(JSON.parse(rawLead)));
-    } catch (error) {
-      console.warn("Failed to read assessment lead from localStorage", error);
-    }
-  }, []);
-
-  const lead = useMemo(() => ({ ...form, ...storedLead }), [form, storedLead]);
-
-  const consultationText = useMemo(
-    () =>
-      [
-        "您好，我刚完成了 AI 留学奖学金匹配测评，想请顾问帮我做人工复核。",
-        "",
-        `报告编号：${reportMeta.reportId}`,
-        `生成时间：${reportMeta.generatedAt}`,
-        `当前学历：${lead.currentEducation}`,
-        `目标学历：${lead.targetDegree}`,
-        `目标国家：${lead.targetCountries}`,
-        `专业方向：${lead.majorDirection}`,
-        `GPA/均分：${lead.gpa}`,
-        `语言成绩：${lead.languageScore}`,
-        `家庭预算：${lead.familyBudget}`,
-        `奖学金偏好：${lead.scholarshipPreference}`,
-        `系统匹配等级：${result.matchLevel}`,
-        `整体匹配分：${result.overallMatchScore}/100`,
-        "",
-        "以下信息为顾问内部跟进参考，请不要直接转发给学生：",
-        `线索等级：${result.leadQuality}`,
-        `推荐跟进方式：${result.recommendedFollowUp}`,
-        `适合推荐的服务套餐：${result.recommendedServicePackage}`,
-      ].join("\n"),
-    [lead, reportMeta, result],
-  );
-
+  const consultationText = useMemo(() => generateAdvisorInternalText(userProfile, matchResult), [userProfile, matchResult]);
   const reportSummaryText = useMemo(
     () =>
       [
-        `AI 留学奖学金匹配简版报告（${reportMeta.reportId}）`,
-        `生成时间：${reportMeta.generatedAt}`,
-        `目标：${lead.targetDegree} · ${lead.targetCountries} · ${lead.majorDirection}`,
-        `整体匹配评级：${result.matchLevel}`,
-        `整体匹配分：${result.overallMatchScore}/100`,
-        `推荐国家方向：${result.recommendedCountries.join("、") || "待进一步确认"}`,
+        `AI 留学奖学金匹配简版报告（${matchResult.reportId}）`,
+        `生成时间：${new Date(matchResult.createdAt).toLocaleString("zh-CN", { hour12: false })}`,
+        `目标：${userProfile.targetDegree} · ${userProfile.targetCountry} · ${userProfile.targetMajor}`,
+        `整体匹配评级：${matchLevelLabels[matchResult.matchLevel]}`,
+        `匹配分数：${matchResult.matchScore}/100`,
+        `推荐国家方向：${matchResult.recommendedCountries.join("、") || "待进一步确认"}`,
         "",
         "初筛奖学金机会：",
-        ...result.recommendedScholarships.map((item, index) => `${index + 1}. ${item.name}｜${item.country}｜${item.type}｜AI 置信度 ${item.aiConfidence}%`),
+        ...matchResult.recommendedScholarships.map((item, index) => `${index + 1}. ${item.name}｜${item.country}｜${item.scholarshipType}｜AI 置信度 ${item.aiConfidence}%`),
         "",
-        "重要提示：AI 结果仅供参考，以官网和人工复核为准。",
+        "重要提示：AI 初筛仅供参考，以官网和人工复核为准。",
+        `顾问微信：${CONSULTANT_WECHAT}`,
       ].join("\n"),
-    [lead, reportMeta, result],
+    [userProfile, matchResult],
   );
 
   const isSummary = mode === "summary";
@@ -86,11 +41,11 @@ export function CopyConsultationButton({ form, result, reportMeta, mode = "consu
 
   async function handleCopy() {
     try {
-      await navigator.clipboard.writeText(copyText);
+      await navigator.clipboard.writeText(isSummary ? copyText : generateConsultationText(userProfile, matchResult));
       trackEvent("click_copy_consultation", {
-        reportId: reportMeta.reportId,
+        reportId: matchResult.reportId,
         mode,
-        leadQuality: result.leadQuality,
+        leadQuality: matchResult.leadQuality,
       });
       setCopyStatus("copied");
       window.setTimeout(() => setCopyStatus("idle"), 2200);
@@ -105,7 +60,7 @@ export function CopyConsultationButton({ form, result, reportMeta, mode = "consu
       <p className="text-sm font-black text-brand-600">{isSummary ? "Report Summary" : "Lead Capture"}</p>
       <h2 className="mt-1 text-xl font-black text-slate-950">{isSummary ? "复制报告摘要" : "复制咨询信息，发给顾问"}</h2>
       <p className="mt-3 text-sm leading-6 text-slate-600">
-        {isSummary ? "一键复制简版报告摘要，方便保存、转发或后续做人工复核。" : "复制用户背景、匹配等级、预算、奖学金偏好和咨询诉求，用户可直接粘贴发给顾问微信。"}
+        {isSummary ? "一键复制简版报告摘要，方便保存、转发或后续做人工复核。" : `复制用户背景、匹配等级、预算、奖学金偏好和咨询诉求，可直接发给顾问微信 ${CONSULTANT_WECHAT}。`}
       </p>
       <div className="mt-4 max-h-64 overflow-auto rounded-2xl bg-slate-50 p-4 text-xs leading-6 text-slate-600 ring-1 ring-slate-100">
         <pre className="whitespace-pre-wrap font-sans">{copyText}</pre>
@@ -117,14 +72,8 @@ export function CopyConsultationButton({ form, result, reportMeta, mode = "consu
       >
         {copyStatus === "copied" ? "已复制" : isSummary ? "复制报告摘要" : "复制咨询信息，发给顾问"}
       </button>
-      {copyStatus === "failed" ? (
-        <p className="mt-3 text-xs leading-5 text-rose-600">复制失败，请手动选中文本复制。</p>
-      ) : null}
-      {copyStatus === "copied" ? (
-        <div className="fixed bottom-5 left-1/2 z-50 -translate-x-1/2 rounded-full bg-slate-950 px-5 py-3 text-sm font-black text-white shadow-soft">
-          复制成功，可发送给顾问微信
-        </div>
-      ) : null}
+      {copyStatus === "failed" ? <p className="mt-3 text-xs leading-5 text-rose-600">复制失败，请手动选中文本复制。</p> : null}
+      {copyStatus === "copied" ? <div className="fixed bottom-5 left-1/2 z-50 -translate-x-1/2 rounded-full bg-slate-950 px-5 py-3 text-sm font-black text-white shadow-soft">复制成功，可发送给顾问微信</div> : null}
     </div>
   );
 }

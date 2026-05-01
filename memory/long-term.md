@@ -15,14 +15,30 @@
 - 架构更新：已新增 `lib/aiSearch.ts`，暴露 `searchScholarshipsWithAI(userProfile)`；当前返回本地规则 mock 结果，内部 TODO 预留生成搜索关键词、搜索大学/政府/基金会官网、抽取金额/资格/截止日期、验证来源可靠性、生成匹配评分等能力；结果页通过该抽象函数获取结果，不再直接调用 matcher。
 - Lead capture 更新：测评表单提交时会把用户信息保存到浏览器 `localStorage` 的 `scholarshipAssessmentLead`；结果页新增 `CopyConsultationButton`，可读取本机保存的 lead 数据并复制一段适合发给顾问微信的咨询文本，包含学历、目标国家、专业、GPA、语言、预算、奖学金偏好和系统匹配等级。
 - 商业转化更新：结果页免费结果下方新增“完整报告将包含”区块，明确列出 10–20 个奖学金机会、官网链接、截止日期、资格要求、匹配评分、申请难度、推荐优先级、材料清单、申请时间线、顾问建议；新增 ¥99 完整 AI 报告与 ¥699 人工复核咨询按钮，点击仅提示“请添加顾问微信获取完整服务。”，仍不接支付。
-- 本次确认：商业转化功能已存在于 `app/result/page.tsx` 和 `components/ServiceActionButton.tsx`，并重新通过 `npm run lint` 与 `npm run build` 验证。
 - 第二轮产品增强完成：结果页新增 AI 参考提示、报告编号 `SCH-2026-随机6位`、生成时间、复制报告摘要、下载 PDF 占位、奖学金来源类型/可靠性/最近验证/截止日期状态/AI 置信度/人工复核建议；测评页新增 3–5 秒分析等待状态、必填校验和邮箱校验；新增 `leadQuality` hot/warm/cold 逻辑，仅用于复制给顾问的信息，不直接展示给用户。
 - 埋点架构更新：新增 `lib/analytics.ts`，`trackEvent(eventName, payload)` 第一版使用 console.log + localStorage 保存最近 100 条事件；已覆盖 visit_home、click_start_assessment、submit_assessment、view_result、click_copy_consultation、click_full_report、click_human_review、click_add_wechat。
 - AI 搜索规划更新：新增 `docs/AI_SEARCH_AGENT_PLAN.md`，规划未来动态搜索关键词生成、大学/政府/基金会官网搜索、字段抽取、来源验证、匹配评分、人工复核包和 provider 化接口。
-- 第二轮验证结论：`npm run lint` 通过，`npm run build` 通过，`npm run dev` 可运行；因 3000/3001 被占用，本次开发服务运行在 `http://localhost:3002`，并用 Node fetch 验证首页和结果页关键内容返回正常。
-- GitHub 推送状态更新：执行 `git status -sb` 显示 `main...origin/main` 无未提交变更；执行 `git push origin main` 返回 `Everything up-to-date`，说明第二轮增强已在最近提交 `0078022 Enhance scholarship matcher conversion flow.` 中并已同步到 GitHub。
-- Vercel 部署尝试：尝试打开 `https://vercel.com/new` 进行导入部署，但浏览器 MCP 报错 `Chrome debugger did not start within 10000ms`；本地也未安装 Vercel CLI（`vercel: command not found`）。下一步需要用户在 Vercel 网页端手动导入 GitHub 仓库，或安装/登录 Vercel CLI 后继续。
-- Vercel 线上部署检测：用户已完成 Vercel Deployment，线上地址为 `https://jxj-for-u-di7k.vercel.app/`。因 browser-use 仍报 `Chrome debugger did not start within 10000ms`，改用 Node fetch 检测；首页 `/`、测评页 `/assessment`、带测试参数的结果页 `/result?...` 均返回 HTTP 200，且关键内容检查通过（首页标题/CTA、表单字段、AI 免责声明、报告/匹配信息、完整报告转化区、¥99/¥699、复制给顾问）。
 - 转化率优化偏好：用户要求首页更有吸引力、表单更像测评、结果页更像正式报告，并提升添加顾问微信意愿；仍坚持不新增复杂数据库、登录、支付或后台。
-- 本轮转化率优化完成：结果页机会数量从静态值改为基于推荐卡片 `aiConfidence`/`difficulty` 推导；强化“免费展示前 3 个机会，完整报告包含 10–20 个机会”提示；服务卡按钮精确调整为“查看当前简版 / 获取完整报告 / 预约人工复核”；复制顾问按钮文案调整为“复制咨询信息，发给顾问”。
-- 本轮本地验证：`npm run lint` 通过、`npm run build` 通过、`npm run dev` 可运行在 `http://localhost:3003`；Node fetch smoke check 覆盖首页、测评页和结果页关键转化内容并通过。
+- Vercel 线上测试地址历史：`https://jxj-for-u-di7k.vercel.app/` 可访问；新版转化率优化已在 `https://jxj-for-u-4xrq.vercel.app/` 核验上线。
+- 内部顾问试用版架构决策：不引入 Supabase、微信登录、支付或复杂后台；前端仍为 H5，数据工作台使用飞书多维表格；顾问微信统一为 `heyiao2012`；用户提交时只跑规则 mock 初筛并立即出简版报告，AI 动态搜索通过后端接口预留给顾问手动触发。
+- 内部顾问试用版实现：新增 `src/lib/config.ts`、`src/types/index.ts`、`src/lib/matcher.ts`、`src/lib/mockScholarships.ts`、`src/lib/consultationText.ts`，旧 `lib/*` 和 `types/index.ts` 改为 re-export 兼容；结果页改为从 localStorage 读取 `scholarshipUserProfile` 与 `scholarshipMatchResult`，减少长 query 依赖。
+- 飞书集成预留：新增 `src/lib/feishu/client.ts`、`fieldMap.ts`、`leads.ts`、`scholarships.ts`、`aiRuns.ts` 与 `app/api/leads/route.ts`；未配置环境变量时 API 返回清晰 `success:false`，不影响用户查看报告。
+- AI 手动复核预留：新增 `src/lib/ai/openrouter.ts`、`generateSearchQueries.ts`、`extractScholarshipFields.ts`、`scoreScholarshipMatch.ts`、`generateAdvisorSummary.ts`、`exa.ts`、`searchScholarshipWeb.ts` 与 `app/api/admin/run-ai-review/route.ts`；成本控制为最多 5 queries、12 URLs、8 candidates。
+- 文档更新：新增 `.env.example`、`docs/FEISHU_SETUP.md`、`docs/INTERNAL_ADVISOR_WORKFLOW.md`、`docs/AI_SEARCH_ARCHITECTURE.md`。
+- 内部顾问试用版本地验证：`npm run lint` 通过；`npm run build` 通过；`npm run dev` 因端口占用运行在 `http://localhost:3004`；`POST /api/leads` 在未配置飞书 env 时返回 `success:false` 和缺失变量提示，符合降级设计。
+- 飞书配置讨论：用户询问企业自建应用开通权限后，是否能通过授权自动创建多维表格、数据表、字段并取得 app_token/table_id。建议结论：技术上可以部分/大部分自动化，但 MVP 首次配置仍建议手动创建 base 并自动/手动建表字段；后续可增加 `setup-feishu` 脚本或内部 setup API 自动建三张表和字段。
+- 飞书自动建表实现：新增 `scripts/setup-feishu.mjs` 和 npm script `setup:feishu`；脚本读取 `.env.local` 中的 `FEISHU_APP_ID`、`FEISHU_APP_SECRET`、`FEISHU_BITABLE_APP_TOKEN`，在现有 Base 下自动创建 Leads、Scholarships、AI Runs 三张表，并把全部字段以文本类型创建，最后输出三张表 table_id。`docs/FEISHU_SETUP.md` 已补充自动建表流程。
+
+## 2026-05-01
+- 飞书配置安全提醒：用户曾在聊天中直接提供 `FEISHU_APP_SECRET`，后续应提醒其在飞书开放平台重置/轮换该 Secret，并只放入 `.env.local` 或 Vercel 环境变量，不要提交到 GitHub。
+- 飞书 setup 排查：本地 `.env.local` 已写入飞书配置且被 `.gitignore` 忽略；`setup-feishu.mjs` 已兼容带 query 的 `FEISHU_BITABLE_APP_TOKEN`，会自动取 `?` 前 token。
+- 运行 `npm run setup:feishu` 时 token 获取成功，但创建数据表返回 `Forbidden`，当前判断为应用缺少多维表格/base 读写权限、权限未发布，或应用未被添加为该 Base 的可编辑协作者。
+- 用户再次要求运行 `npm run setup:feishu`；脚本仍在创建 `Leads` 数据表时返回 `Forbidden (/open-apis/bitable/v1/apps/ICD6bEPS3a6brpslmV8cUD65nxb/tables)`，进一步确认不是代码语法/环境变量缺失问题，而是飞书 Base 权限、应用协作者、权限范围或应用发布状态问题。
+- 用户反馈企业自建应用无法被添加为已有 Base 的可编辑协作者，因此选择“改成全自动”路线。已改造 `scripts/setup-feishu.mjs` 支持 `FEISHU_SETUP_MODE=create-base`，可自动创建新的飞书多维表格 Base，再创建 Leads、Scholarships、AI Runs 三张表和全部文本字段。
+- 使用 `FEISHU_SETUP_MODE=create-base npm run setup:feishu` 已成功创建新 Base：`AI 奖学金匹配助手 - 顾问工作台`，新 `FEISHU_BITABLE_APP_TOKEN=HFD5bJChOaVYl8sWDegcaWMZnIA`，表 ID 为 `FEISHU_LEADS_TABLE_ID=tblBRlgBEVL5v1xq`、`FEISHU_SCHOLARSHIPS_TABLE_ID=tblt8OVCvgm2gKXt`、`FEISHU_AI_RUNS_TABLE_ID=tblZFPveSOBPmS6d`；已写入本地 `.env.local`。
+- 飞书记录写入测试：首次 `/api/leads` 返回 `TextFieldConvFail`，原因是飞书文本字段不接受 boolean/array 原始值；已在 `src/lib/feishu/client.ts` 中统一把所有字段归一化为文本（boolean 转“是/否”、array 换行拼接、object JSON.stringify）。再次测试 `POST /api/leads` 成功返回 `{ success: true, reportId: "SCH-2026-TEST02" }`。
+- 当前验证：`npm run lint` 通过，`npm run build` 通过；本地 dev 服务运行在 `http://localhost:3005`。
+- 最新重复需求核验：用户再次给出“内部顾问小范围试用版”完整需求后，已重新核验当前实现，`npm run lint` 通过、`npm run build` 通过、`npm run dev` 启动在 `http://localhost:3006`；本地首页和测评页 smoke check 200，结果页无 localStorage 时走引导降级。
+- 飞书新 Base 链接：Leads 表 `https://feishu.cn/base/HFD5bJChOaVYl8sWDegcaWMZnIA?table=tblBRlgBEVL5v1xq`；Scholarships 表 `https://feishu.cn/base/HFD5bJChOaVYl8sWDegcaWMZnIA?table=tblt8OVCvgm2gKXt`；AI Runs 表 `https://feishu.cn/base/HFD5bJChOaVYl8sWDegcaWMZnIA?table=tblZFPveSOBPmS6d`。
+- OpenRouter/Exa 安全提醒：用户曾在聊天中明文提供 OpenRouter API Key 和 Exa API Key；后续应建议用户在 OpenRouter/Exa 后台重置或轮换，并只放入 `.env.local` / Vercel 环境变量，不提交 GitHub。
+- AI 复核联调结论：Exa Search/Contents 已真实跑通；OpenRouter API Key 可用。`google/gemma-4-31b-it:free` 曾返回 upstream 429 限流，本地临时用 `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free` 同时作为 fast/strong 模型跑通 `/api/admin/run-ai-review`。已增强 query fallback、单页抽取/评分容错、Exa fallback candidates、字段规范化和成本控制。

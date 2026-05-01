@@ -1,12 +1,11 @@
 "use client";
 
 import { useEffect } from "react";
-import { trackEvent } from "@/lib/analytics";
-import type { MatchLevel } from "@/types";
+import { trackEvent } from "@/src/lib/analytics";
 
 interface ResultPageClientEventsProps {
   reportId: string;
-  matchLevel: MatchLevel;
+  matchLevel: string;
   overallMatchScore: number;
 }
 

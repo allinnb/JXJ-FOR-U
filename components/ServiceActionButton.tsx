@@ -1,6 +1,7 @@
 "use client";
 
-import { trackEvent, type AnalyticsEventName } from "@/lib/analytics";
+import { CONSULTANT_WECHAT } from "@/src/lib/config";
+import { trackEvent, type AnalyticsEventName } from "@/src/lib/analytics";
 
 type ServiceActionButtonProps = {
   children: React.ReactNode;
@@ -12,7 +13,7 @@ type ServiceActionButtonProps = {
 export function ServiceActionButton({ children, variant = "primary", eventName = "click_full_report", payload = {} }: ServiceActionButtonProps) {
   const handleClick = () => {
     trackEvent(eventName, payload);
-    window.alert("请添加顾问微信获取完整服务。");
+    window.alert(`请添加顾问微信 ${CONSULTANT_WECHAT} 获取完整服务。`);
   };
 
   const className =

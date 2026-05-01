@@ -3,7 +3,10 @@
 import { useRouter } from "next/navigation";
 import { FormEvent, useMemo, useState } from "react";
 import { PageShell } from "@/components/PageShell";
-import { trackEvent } from "@/lib/analytics";
+import { CONSULTANT_WECHAT, STORAGE_KEYS, TRUST_DISCLAIMER } from "@/src/lib/config";
+import { trackEvent } from "@/src/lib/analytics";
+import { matchScholarships } from "@/src/lib/matcher";
+import type { FeishuSyncStatus, UserProfile } from "@/src/types";
 
 const goalSelectFields = [
   { name: "currentEducation", label: "当前学历", options: ["高中/国际高中", "本科", "硕士", "博士", "其他"] },
@@ -11,14 +14,12 @@ const goalSelectFields = [
 ];
 
 const goalInputFields = [
-  { name: "targetCountries", label: "目标国家/地区", placeholder: "如：英国、美国、加拿大、欧洲", type: "text" },
-  { name: "majorDirection", label: "目标专业方向", placeholder: "如：商科、计算机、教育、工程", type: "text" },
+  { name: "targetCountry", label: "目标国家/地区", placeholder: "如：英国、美国、加拿大、欧洲", type: "text" },
+  { name: "targetMajor", label: "目标专业方向", placeholder: "如：商科、计算机、教育、工程", type: "text" },
   { name: "intakeTime", label: "入学时间", placeholder: "如：2026 Fall", type: "text" },
 ];
 
-const backgroundSelectFields = [
-  { name: "schoolBackground", label: "学校背景", options: ["985", "211", "双非", "海外院校", "国际学校", "其他"] },
-];
+const backgroundSelectFields = [{ name: "schoolBackground", label: "学校背景", options: ["985", "211", "双非", "海外院校", "国际学校", "其他"] }];
 
 const backgroundInputFields = [
   { name: "gpa", label: "GPA 或均分", placeholder: "如：3.5/4.0 或 86/100", type: "text" },
@@ -27,23 +28,17 @@ const backgroundInputFields = [
 
 const serviceSelectFields = [
   { name: "scholarshipPreference", label: "期望奖学金类型", options: ["全奖", "半奖", "学费减免", "生活补助", "都可以"] },
-  { name: "acceptNonPopular", label: "是否接受非热门国家或非热门院校", options: ["是", "否"] },
-  { name: "needConsulting", label: "是否需要人工申请辅导", options: ["是", "否"] },
+  { name: "acceptsNonPopular", label: "是否接受非热门国家或非热门院校", options: ["是", "否"] },
+  { name: "needsConsulting", label: "是否需要人工申请辅导", options: ["是", "否"] },
 ];
 
 const serviceInputFields = [
-  { name: "familyBudget", label: "家庭预算", placeholder: "如：低预算 / 20-30万 / 50万以上", type: "text" },
+  { name: "budget", label: "家庭预算", placeholder: "如：低预算 / 20-30万 / 50万以上", type: "text" },
   { name: "email", label: "邮箱", placeholder: "用于接收报告备份", type: "email" },
   { name: "wechat", label: "微信号（选填）", placeholder: "填写后便于顾问发送人工复核建议", type: "text", optional: true },
 ];
 
-const analysisMessages = [
-  "正在分析你的学术背景",
-  "正在生成目标国家搜索策略",
-  "正在匹配适合的奖学金类型",
-  "正在评估申请难度与风险",
-  "正在生成简版报告",
-];
+const analysisMessages = ["正在分析你的学术背景", "正在生成目标国家搜索策略", "正在匹配适合的奖学金类型", "正在评估申请难度与风险", "正在生成简版报告"];
 
 const requiredFields = [
   ...goalSelectFields.map((field) => field.name),
@@ -64,9 +59,7 @@ function FieldInput({ field }: { field: { name: string; label: string; placehold
     <label className="block">
       <span className="text-sm font-black text-slate-800">{field.label}</span>
       <input name={field.name} type={field.type} required={!field.optional} placeholder={field.placeholder} className="mt-2 w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-brand-500 focus:ring-4 focus:ring-blue-50" />
-      {field.name === "wechat" ? (
-        <p className="mt-2 text-xs leading-5 text-slate-500">填写后可获得人工复核建议，不填写也可以查看简版报告。</p>
-      ) : null}
+      {field.name === "wechat" ? <p className="mt-2 text-xs leading-5 text-slate-500">填写微信后，顾问可根据报告提供人工复核建议。不填写也可以查看简版报告。</p> : null}
     </label>
   );
 }
@@ -84,6 +77,27 @@ function FieldSelect({ field }: { field: { name: string; label: string; options:
   );
 }
 
+function readProfile(formData: FormData): UserProfile {
+  const read = (key: keyof UserProfile) => String(formData.get(key) || "").trim();
+  return {
+    currentEducation: (read("currentEducation") || "本科") as UserProfile["currentEducation"],
+    targetDegree: (read("targetDegree") || "硕士") as UserProfile["targetDegree"],
+    targetCountry: read("targetCountry"),
+    targetMajor: read("targetMajor"),
+    intakeTime: read("intakeTime"),
+    schoolBackground: (read("schoolBackground") || "其他") as UserProfile["schoolBackground"],
+    gpa: read("gpa"),
+    languageScore: read("languageScore"),
+    experiences: read("experiences"),
+    budget: read("budget"),
+    scholarshipPreference: (read("scholarshipPreference") || "都可以") as UserProfile["scholarshipPreference"],
+    acceptsNonPopular: (read("acceptsNonPopular") || "是") as UserProfile["acceptsNonPopular"],
+    needsConsulting: (read("needsConsulting") || "否") as UserProfile["needsConsulting"],
+    wechat: read("wechat"),
+    email: read("email"),
+  };
+}
+
 export default function AssessmentPage() {
   const router = useRouter();
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -92,58 +106,78 @@ export default function AssessmentPage() {
 
   const progressWidth = useMemo(() => `${((analysisStep + 1) / analysisMessages.length) * 100}%`, [analysisStep]);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function syncLead(userProfile: UserProfile, matchResult: ReturnType<typeof matchScholarships>) {
+    try {
+      const response = await fetch("/api/leads", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userProfile, matchResult }),
+      });
+      const data = (await response.json()) as FeishuSyncStatus;
+      localStorage.setItem(STORAGE_KEYS.feishuSyncStatus, JSON.stringify({ ...data, syncedAt: new Date().toISOString() }));
+      if (!data.success) console.warn("Feishu sync failed", data.error);
+    } catch (error) {
+      console.warn("Feishu sync request failed", error);
+      localStorage.setItem(
+        STORAGE_KEYS.feishuSyncStatus,
+        JSON.stringify({ success: false, error: "后台同步失败", syncedAt: new Date().toISOString() } satisfies FeishuSyncStatus),
+      );
+    }
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setFormError("");
 
     try {
       const formData = new FormData(event.currentTarget);
-      const params = new URLSearchParams();
-      const leadData: Record<string, string> = {};
+      const profile = readProfile(formData);
+      const values = Object.fromEntries(formData.entries());
 
-      formData.forEach((value, key) => {
-        const normalizedValue = String(value).trim();
-        params.set(key, normalizedValue);
-        leadData[key] = normalizedValue;
-      });
-
-      const missingField = requiredFields.find((field) => !leadData[field]);
+      const missingField = requiredFields.find((field) => !String(values[field] || "").trim());
       if (missingField) {
         setFormError("请先补充所有必填信息，再生成奖学金匹配报告。");
         return;
       }
 
-      if (!isValidEmail(leadData.email)) {
+      if (!isValidEmail(profile.email)) {
         setFormError("请填写有效的邮箱地址，方便接收报告备份。");
         return;
       }
 
+      const matchResult = matchScholarships(profile);
+
       try {
-        localStorage.setItem("scholarshipAssessmentLead", JSON.stringify(leadData));
+        localStorage.setItem(STORAGE_KEYS.userProfile, JSON.stringify(profile));
+        localStorage.setItem(STORAGE_KEYS.matchResult, JSON.stringify(matchResult));
+        localStorage.setItem(STORAGE_KEYS.legacyLead, JSON.stringify(profile));
+        localStorage.setItem(STORAGE_KEYS.feishuSyncStatus, JSON.stringify({ success: false, error: "后台同步中", syncedAt: new Date().toISOString() }));
       } catch (error) {
-        console.warn("Failed to save assessment lead to localStorage", error);
+        console.warn("Failed to save assessment data to localStorage", error);
       }
 
       trackEvent("submit_assessment", {
-        targetDegree: leadData.targetDegree,
-        targetCountries: leadData.targetCountries,
-        scholarshipPreference: leadData.scholarshipPreference,
-        needConsulting: leadData.needConsulting,
+        reportId: matchResult.reportId,
+        targetDegree: profile.targetDegree,
+        targetCountry: profile.targetCountry,
+        scholarshipPreference: profile.scholarshipPreference,
+        needsConsulting: profile.needsConsulting,
       });
 
       setIsAnalyzing(true);
       setAnalysisStep(0);
+      void syncLead(profile, matchResult);
 
       analysisMessages.forEach((_, index) => {
         window.setTimeout(() => setAnalysisStep(index), index * 700);
       });
 
       window.setTimeout(() => {
-        router.push(`/result?${params.toString()}`);
+        router.push(`/result?reportId=${encodeURIComponent(matchResult.reportId)}`);
       }, 3600);
     } catch (error) {
       console.warn("Assessment submission failed", error);
-      setFormError("生成报告时遇到问题，请检查信息后再试一次。");
+      setFormError(`生成报告时遇到问题，请检查信息后再试一次，或添加顾问微信 ${CONSULTANT_WECHAT}。`);
       setIsAnalyzing(false);
     }
   }
@@ -159,14 +193,14 @@ export default function AssessmentPage() {
             <div className="mt-6 h-3 overflow-hidden rounded-full bg-slate-100">
               <div className="h-full rounded-full bg-brand-600 transition-all duration-500" style={{ width: progressWidth }} />
             </div>
-            <p className="mt-4 text-sm leading-6 text-slate-500">预计 3–5 秒完成。第一版使用规则匹配与 mock 数据，未来可替换为动态搜索和官网验证。</p>
+            <p className="mt-4 text-sm leading-6 text-slate-500">预计 3–5 秒完成。当前先生成规则初筛报告，同时尝试同步到飞书顾问工作台。</p>
           </div>
         ) : (
           <>
             <div className="mb-6 rounded-[2rem] bg-white p-6 shadow-sm ring-1 ring-slate-100 md:p-8">
               <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-black text-brand-700 ring-1 ring-blue-100">免费测评 · 约 2 分钟</span>
               <h1 className="mt-4 text-3xl font-black leading-tight text-slate-950 md:text-4xl">像做一次咨询前测评一样，填写你的申请背景</h1>
-              <p className="mt-3 text-sm leading-6 text-slate-600">我们会先生成简版报告：匹配等级、前 3 个机会、风险提示和顾问可复核的关键信息。</p>
+              <p className="mt-3 text-sm leading-6 text-slate-600">提交后你会立即看到简版报告；顾问可在飞书工作台查看资料、复核机会并记录跟进状态。</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-5 rounded-[2.2rem] bg-white p-5 shadow-soft ring-1 ring-slate-100 md:p-8">
@@ -206,7 +240,7 @@ export default function AssessmentPage() {
               <button type="submit" className="w-full rounded-2xl bg-brand-600 px-6 py-4 text-sm font-black text-white shadow-lg shadow-blue-100 transition hover:-translate-y-0.5 hover:bg-brand-700">
                 生成奖学金匹配报告
               </button>
-              <p className="text-center text-xs leading-5 text-slate-400">AI 初筛仅供参考，奖学金政策、截止日期和资格要求可能变化，正式申请前建议以官网和人工复核为准。</p>
+              <p className="text-center text-xs leading-5 text-slate-400">{TRUST_DISCLAIMER}</p>
             </form>
           </>
         )}
