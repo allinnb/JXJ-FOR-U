@@ -171,13 +171,13 @@ export default function AssessmentPage() {
         body: JSON.stringify({ userProfile, matchResult }),
       });
       const data = (await response.json()) as FeishuSyncStatus;
-      localStorage.setItem(STORAGE_KEYS.feishuSyncStatus, JSON.stringify({ ...data, syncedAt: new Date().toISOString() }));
+      localStorage.setItem(STORAGE_KEYS.feishuSyncStatus, JSON.stringify({ ...data, status: data.success ? "success" : "failed", syncedAt: new Date().toISOString() }));
       if (!data.success) console.warn("Feishu sync failed", data.error);
     } catch (error) {
       console.warn("Feishu sync request failed", error);
       localStorage.setItem(
         STORAGE_KEYS.feishuSyncStatus,
-        JSON.stringify({ success: false, error: "后台同步失败", syncedAt: new Date().toISOString() } satisfies FeishuSyncStatus),
+        JSON.stringify({ success: false, status: "failed" as const, error: "后台同步失败", syncedAt: new Date().toISOString() } satisfies FeishuSyncStatus),
       );
     }
   }
@@ -210,7 +210,7 @@ export default function AssessmentPage() {
         localStorage.setItem(STORAGE_KEYS.userProfile, JSON.stringify(profile));
         localStorage.setItem(STORAGE_KEYS.matchResult, JSON.stringify(matchResult));
         localStorage.setItem(STORAGE_KEYS.legacyLead, JSON.stringify(profile));
-        localStorage.setItem(STORAGE_KEYS.feishuSyncStatus, JSON.stringify({ success: false, error: "后台同步中", syncedAt: new Date().toISOString() }));
+        localStorage.setItem(STORAGE_KEYS.feishuSyncStatus, JSON.stringify({ success: false, status: "pending" as const, error: "后台同步中", syncedAt: new Date().toISOString() } satisfies FeishuSyncStatus));
       } catch (error) {
         console.warn("Failed to save assessment data to localStorage", error);
       }

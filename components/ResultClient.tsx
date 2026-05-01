@@ -143,6 +143,25 @@ export function ResultClient() {
     }
   }, []);
 
+  // Poll localStorage for sync status update if still pending
+  useEffect(() => {
+    if (syncStatus?.status !== "pending") return;
+    const interval = window.setInterval(() => {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEYS.feishuSyncStatus);
+        if (!raw) return;
+        const parsed = JSON.parse(raw) as FeishuSyncStatus;
+        if (parsed.status !== "pending") {
+          setSyncStatus(parsed);
+          window.clearInterval(interval);
+        }
+      } catch {
+        // ignore parse errors during polling
+      }
+    }, 1500);
+    return () => window.clearInterval(interval);
+  }, [syncStatus?.status]);
+
   const opportunityStats = useMemo(() => getOpportunityStats(matchResult?.recommendedScholarships || []), [matchResult]);
 
   if (isLoading) return <SkeletonLoader />;
@@ -176,7 +195,17 @@ export function ResultClient() {
     <section className="mx-auto max-w-6xl px-5 pb-14 pt-6 md:pt-10">
       <ResultPageClientEvents reportId={matchResult.reportId} matchLevel={matchLevelLabels[matchResult.matchLevel]} overallMatchScore={matchResult.matchScore} />
       <div className="mb-5 rounded-3xl bg-amber-50 px-5 py-4 text-sm font-bold leading-6 text-amber-950 ring-1 ring-amber-100">{TRUST_DISCLAIMER}</div>
-      {syncStatus && !syncStatus.success ? (
+      {syncStatus && syncStatus.status === "pending" ? (
+        <div className="mb-5 rounded-3xl bg-blue-50 px-5 py-4 text-sm font-bold leading-6 text-blue-800 ring-1 ring-blue-100">
+          报告已生成，后台正在同步数据到飞书顾问工作台，通常几秒内完成。
+        </div>
+      ) : null}
+      {syncStatus && syncStatus.status === "failed" ? (
+        <div className="mb-5 rounded-3xl bg-rose-50 px-5 py-4 text-sm font-bold leading-6 text-rose-800 ring-1 ring-rose-100">
+          报告已生成，但后台同步失败。你可以添加顾问微信 {CONSULTANT_WECHAT} 获取人工复核。
+        </div>
+      ) : null}
+      {syncStatus && !syncStatus.status && !syncStatus.success ? (
         <div className="mb-5 rounded-3xl bg-rose-50 px-5 py-4 text-sm font-bold leading-6 text-rose-800 ring-1 ring-rose-100">
           报告已生成，但后台同步失败。你可以添加顾问微信 {CONSULTANT_WECHAT} 获取人工复核。
         </div>

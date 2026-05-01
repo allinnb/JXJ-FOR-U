@@ -110,6 +110,7 @@ export interface AIRunRecord {
 
 export interface FeishuSyncStatus {
   success: boolean;
+  status?: "pending" | "success" | "failed";
   reportId?: string;
   error?: string;
   syncedAt?: string;
