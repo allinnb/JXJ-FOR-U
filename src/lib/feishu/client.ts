@@ -15,7 +15,9 @@ function requireEnv(name: string) {
   return value;
 }
 
-export function getFeishuBitableConfig(table: "leads" | "scholarships" | "aiRuns") {
+export type FeishuTableName = "leads" | "scholarships" | "aiRuns";
+
+export function getFeishuBitableConfig(table: FeishuTableName) {
   const appToken = requireEnv("FEISHU_BITABLE_APP_TOKEN");
   const tableIdMap = {
     leads: requireEnv("FEISHU_LEADS_TABLE_ID"),
@@ -97,10 +99,46 @@ function normalizeTextFields(fields: Record<string, unknown>) {
   return Object.fromEntries(Object.entries(fields).map(([key, value]) => [key, toFeishuTextValue(value)]));
 }
 
-export async function createBitableRecord(table: "leads" | "scholarships" | "aiRuns", fields: Record<string, unknown>) {
+export async function createBitableRecord(table: FeishuTableName, fields: Record<string, unknown>) {
   const { appToken, tableId } = getFeishuBitableConfig(table);
   return feishuFetch(`/open-apis/bitable/v1/apps/${appToken}/tables/${tableId}/records`, {
     method: "POST",
     body: JSON.stringify({ fields: normalizeTextFields(fields) }),
   });
+}
+
+type BitableRecord = {
+  record_id: string;
+  fields: Record<string, unknown>;
+};
+
+type ListRecordsResponse = {
+  data?: {
+    items?: BitableRecord[];
+    has_more?: boolean;
+    page_token?: string;
+  };
+};
+
+export async function listBitableRecords(table: FeishuTableName, maxPages = 5) {
+  const { appToken, tableId } = getFeishuBitableConfig(table);
+  const records: BitableRecord[] = [];
+  let pageToken = "";
+  let page = 0;
+
+  do {
+    const params = new URLSearchParams({ page_size: "100" });
+    if (pageToken) params.set("page_token", pageToken);
+
+    const data = await feishuFetch<ListRecordsResponse>(
+      `/open-apis/bitable/v1/apps/${appToken}/tables/${tableId}/records?${params.toString()}`,
+      { method: "GET" },
+    );
+
+    records.push(...(data.data?.items || []));
+    pageToken = data.data?.has_more ? data.data.page_token || "" : "";
+    page += 1;
+  } while (pageToken && page < maxPages);
+
+  return records;
 }
