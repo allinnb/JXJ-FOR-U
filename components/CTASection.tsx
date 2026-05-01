@@ -17,7 +17,7 @@ export function CTASection() {
       </div>
       <div className="mt-6 flex flex-col gap-3 sm:flex-row">
         <Link href="/assessment" className="rounded-2xl bg-white px-5 py-3.5 text-center text-sm font-black text-slate-950 shadow-lg transition hover:-translate-y-0.5">
-          重新免费测评
+          获取我的专属奖学金方案
         </Link>
         <AddWechatLink className="rounded-2xl border border-white/25 px-5 py-3.5 text-center text-sm font-black text-white transition hover:bg-white/10">
           复制顾问微信：{CONSULTANT_WECHAT}

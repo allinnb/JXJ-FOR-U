@@ -69,6 +69,14 @@ export default function HomePage() {
               ))}
             </div>
 
+            <div className="mt-4 rounded-3xl bg-blue-50 p-4 ring-1 ring-blue-100">
+              <p className="text-sm font-black text-brand-700">先填 4 个关键信息就能开始</p>
+              <p className="mt-1 text-xs font-semibold leading-5 text-slate-600">目标国家、学历阶段、专业方向、GPA/均分；无需登录，不填微信也能先看简版报告。</p>
+              <AnalyticsLink href="/assessment" eventName="click_start_assessment" className="mt-3 block rounded-2xl bg-slate-950 px-5 py-3.5 text-center text-sm font-black text-white shadow-lg transition hover:-translate-y-0.5 hover:bg-slate-800">
+                立即开始 30 秒自测
+              </AnalyticsLink>
+            </div>
+
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <AnalyticsLink href="/assessment" eventName="click_start_assessment" className="rounded-2xl bg-brand-600 px-7 py-4 text-center text-base font-black text-white shadow-xl shadow-blue-200 transition hover:-translate-y-0.5 hover:bg-brand-700">
                 立即生成我的奖学金报告
@@ -159,23 +167,81 @@ export default function HomePage() {
             <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">移动端可点击复制微信号，也可以长按识别二维码添加顾问；电脑端可扫码或复制微信号搜索添加。</p>
           </div>
           <div className="w-full rounded-3xl bg-slate-50 p-4 ring-1 ring-slate-100 sm:flex sm:items-center sm:gap-4 md:justify-self-end">
-            <div className="mx-auto flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-white p-1.5 shadow-sm ring-1 ring-slate-200 sm:mx-0">
+            <div className="mx-auto flex h-44 w-44 shrink-0 items-center justify-center overflow-hidden rounded-[1.35rem] bg-white p-2 shadow-sm ring-1 ring-slate-200 sm:mx-0 sm:h-40 sm:w-40 md:h-36 md:w-36">
               <Image
                 src="/consultant-wechat.jpg"
                 alt={`顾问微信 ${CONSULTANT_WECHAT} 二维码`}
-                width={128}
-                height={128}
-                className="h-full w-full rounded-xl object-cover"
+                width={176}
+                height={176}
+                className="h-full w-full rounded-2xl object-cover"
                 priority
               />
             </div>
             <div className="mt-4 text-center sm:mt-0 sm:text-left">
               <p className="text-xs font-bold text-slate-500">顾问微信</p>
               <p className="mt-1 text-lg font-black text-slate-950">{CONSULTANT_WECHAT}</p>
-              <p className="mt-1 text-xs font-semibold text-slate-500">长按二维码识别 / 扫码添加</p>
+              <p className="mt-1 text-xs font-semibold text-slate-500">手机端：长按二维码识别添加</p>
+              <p className="mt-0.5 text-xs font-semibold text-slate-500">电脑端：打开微信扫一扫</p>
               <AddWechatLink payload={{ source: "home_wechat_card" }} className="mt-3 inline-flex rounded-xl bg-brand-600 px-4 py-2 text-xs font-black text-white">
                 点击复制微信号
               </AddWechatLink>
+            </div>
+          </div>
+        </section>
+
+        {/* Free report preview hook */}
+        <section className="mt-10 rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-100 md:p-7">
+          <div className="grid gap-6 lg:grid-cols-[0.92fr_1.08fr] lg:items-center">
+            <div>
+              <p className="text-sm font-black text-brand-600">简版报告长什么样？</p>
+              <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950 md:text-3xl">先给你看方向，再决定是否找顾问核验</h2>
+              <p className="mt-3 text-sm leading-6 text-slate-600">
+                免费版会先展示匹配等级、关键风险和前 3 个奖学金机会；完整报告会继续补充 10–20 个机会、官网链接、资格要求、材料清单和申请优先级。
+              </p>
+              <div className="mt-5 flex flex-col gap-3 sm:flex-row">
+                <AnalyticsLink href="/assessment" eventName="click_start_assessment" className="rounded-2xl bg-brand-600 px-5 py-3.5 text-center text-sm font-black text-white shadow-lg shadow-blue-100 transition hover:-translate-y-0.5 hover:bg-brand-700">
+                  生成我的简版报告
+                </AnalyticsLink>
+                <AddWechatLink payload={{ source: "home_report_preview" }} className="rounded-2xl border border-slate-200 px-5 py-3.5 text-center text-sm font-black text-slate-800 transition hover:border-brand-200 hover:text-brand-700">
+                  先加顾问微信咨询
+                </AddWechatLink>
+              </div>
+            </div>
+
+            <div className="rounded-[1.7rem] bg-slate-950 p-4 text-white shadow-xl">
+              <div className="rounded-[1.35rem] bg-white p-4 text-slate-950">
+                <div className="flex items-center justify-between gap-3 border-b border-slate-100 pb-3">
+                  <div>
+                    <p className="text-xs font-black text-brand-600">示例报告 · 免费简版</p>
+                    <h3 className="mt-1 text-lg font-black">您的匹配度：A级 · 86/100</h3>
+                  </div>
+                  <span className="rounded-full bg-green-50 px-3 py-1 text-xs font-black text-green-700">高匹配</span>
+                </div>
+
+                <div className="mt-4 space-y-3">
+                  {[
+                    ["英国 GREAT Scholarships", "政府/大学官网", "适合商科硕士 · 截止日期需官网核验", "82%"],
+                    ["Durham Business Analytics Scholarship", "大学官网", "最高 £12,000 · 申请难度中高", "78%"],
+                    ["院系 Merit Scholarship", "大学官网", "学费减免类 · 适合预算有限家庭", "74%"],
+                  ].map(([name, source, note, confidence]) => (
+                    <div key={name} className="rounded-2xl bg-slate-50 p-3 ring-1 ring-slate-100">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-black text-slate-950">{name}</p>
+                          <p className="mt-1 text-xs font-semibold text-slate-500">来源：{source}</p>
+                        </div>
+                        <span className="shrink-0 rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-black text-brand-700">{confidence}</span>
+                      </div>
+                      <p className="mt-2 text-xs font-semibold leading-5 text-slate-600">{note}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-4 rounded-2xl bg-amber-50 p-3 ring-1 ring-amber-100">
+                  <p className="text-xs font-black text-amber-900">顾问核验后解锁</p>
+                  <p className="mt-1 text-xs font-semibold leading-5 text-amber-900">完整资格要求、官网链接有效性、材料清单、申请时间线和优先级排序。</p>
+                </div>
+              </div>
             </div>
           </div>
         </section>
@@ -249,19 +315,19 @@ export default function HomePage() {
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-xl">🎓</div>
               <h3 className="mt-4 text-lg font-black text-slate-950">升学规划</h3>
               <p className="mt-2 text-sm leading-6 text-slate-600">从选校定位、文书指导到申请材料复核，帮你构建有竞争力的申请组合。</p>
-              <AnalyticsLink href="/assessment" eventName="click_start_assessment" className="mt-4 inline-flex text-sm font-black text-brand-600">了解详情 →</AnalyticsLink>
+              <AnalyticsLink href="/assessment" eventName="click_start_assessment" className="mt-4 inline-flex text-sm font-black text-brand-600">获取我的专属升学方案 →</AnalyticsLink>
             </div>
             <div className="rounded-[2rem] bg-white p-6 shadow-sm ring-1 ring-slate-100">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-green-50 text-xl">🏆</div>
               <h3 className="mt-4 text-lg font-black text-slate-950">奖学金申请</h3>
               <p className="mt-2 text-sm leading-6 text-slate-600">AI 初筛 + 顾问人工复核，帮你找到 10–20 个值得申请的奖学金机会。</p>
-              <AnalyticsLink href="/assessment" eventName="click_start_assessment" className="mt-4 inline-flex text-sm font-black text-brand-600">免费测评 →</AnalyticsLink>
+              <AnalyticsLink href="/assessment" eventName="click_start_assessment" className="mt-4 inline-flex text-sm font-black text-brand-600">获取我的专属奖学金方案 →</AnalyticsLink>
             </div>
             <div className="rounded-[2rem] bg-white p-6 shadow-sm ring-1 ring-slate-100">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 text-xl">✈️</div>
               <h3 className="mt-4 text-lg font-black text-slate-950">签证服务</h3>
               <p className="mt-2 text-sm leading-6 text-slate-600">已拿到 offer？我们提供签证材料准备、面签辅导和入境指导一站式服务。</p>
-              <AddWechatLink payload={{ source: "home_visa" }} className="mt-4 inline-flex text-sm font-black text-brand-600">咨询顾问 →</AddWechatLink>
+              <AddWechatLink payload={{ source: "home_visa" }} className="mt-4 inline-flex text-sm font-black text-brand-600">获取我的专属签证方案 →</AddWechatLink>
             </div>
           </div>
         </section>
